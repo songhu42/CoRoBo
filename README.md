@@ -1,6 +1,6 @@
-#CoRoBo Project 
+# CoRoBo Project 
 ----
-## *  Project Desc 
+## * Project Desc 
 ### .협동 작업 로봇 (Collaborative Working Robot)  
 ####  서봇에 로봇팔로 구성된 2대의 로봇으로, 하나의 로봇이 수행하지 못하는 대형 물체를 협력하여 이동 거치하는 로봇 제어 프로젝트. 
 
