@@ -7,9 +7,10 @@ ros2 pkg create --build-type ament_cmake corobo_cpp
 -- => ga -> gc -> gp 순서대로 ... 
 
 alias gs='git status'
-alias ga='git pull && git add --a'
+alias ga='git add --a'
 alias gc='git commit'
-alias gp='git push'
+alias gp='git push && git pull'
+
 
 alias cw='cd ~/apps/CoRoBo'
 alias cb='cd ~/apps/CoRoBo && colcon build --symlink-install && source ~/.bashrc'
