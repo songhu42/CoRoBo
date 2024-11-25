@@ -3,7 +3,8 @@ ros2 pkg create --build-type ament_python corobo_py
 ros2 pkg create --build-type ament_cmake corobo_cpp
 
 -- .bashrc alias 추가 
-source /home/song/apps/CoRoBo/install/local_setup.bash
+-- github에 push 하기전에 전체 pull 먼저 수행해야 함. git add => ga로 실행하여 git pull 이 먼저 실행 되도록 함. 
+-- => ga -> gc -> gp 순서대로 ... 
 
 alias gs='git status'
 alias ga='git pull && git add --a'
@@ -15,7 +16,9 @@ alias cb='cd ~/apps/CoRoBo && colcon build --symlink-install && source ~/.bashrc
 alias cbp='colcon build --symlink-install --packages-select'
 alias cs='cd ~/apps/CoRoBo/src'
 
+source install/local_setup.bash
+
+
 -- cb 실행 Warning 발생 시  : EasyInstallDeprecationWarning: easy_install command is deprecated.
 pip3 install setuptools==58.2.0
-
-
+ 
