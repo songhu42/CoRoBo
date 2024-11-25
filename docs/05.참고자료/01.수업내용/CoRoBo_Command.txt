@@ -17,7 +17,7 @@ alias cb='cd ~/apps/CoRoBo && colcon build --symlink-install && source ~/.bashrc
 alias cbp='colcon build --symlink-install --packages-select'
 alias cs='cd ~/apps/CoRoBo/src'
 
-source install/local_setup.bash
+source /home/song/apps/apps/CoRoBo/install/local_setup.bash
 
 
 -- cb 실행 Warning 발생 시  : EasyInstallDeprecationWarning: easy_install command is deprecated.
