@@ -4,6 +4,11 @@
 ### .협동 작업 로봇 (Collaborative Working Robot)  
 ####  서봇에 로봇팔로 구성된 2대의 로봇으로, 하나의 로봇이 수행하지 못하는 대형 물체를 협력하여 이동 거치하는 로봇 제어 프로젝트. 
 
+---
+## * 공지사항 
+#### .docs/05.참고자료/01.수업내용/ 폴더에 수업내용중 실행 명령에 관한 txt 파일 참고 바람. 
+#### .CoRoBo_commands.txt 는 계속 업데이트할 파일임. 
+
 
 #### **작업 계획서 <https://docs.google.com/spreadsheets/d/1Ax51eHTzGg0aRhSEcF578aqg9tlRLEkP7mvnGKbirCw/edit?usp=sharing>
 
