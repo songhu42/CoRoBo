@@ -1,0 +1,278 @@
+-- Arduino Uno USB 연결 
+/dev/ttyUSB1 확인 
+
+udevadm info  -a /dev/ttyUSB1  | grep ATTRS{id
+    ATTRS{idProduct}=="7523"
+    ATTRS{idVendor}=="1a86"
+	
+    ATTRS{idVendor}=="0424"
+    ATTRS{idProduct}=="9514"
+    
+	ATTRS{idVendor}=="1d6b"
+    ATTRS{idProduct}=="0002
+sudo udevadm trigger
+
+-- arduino 펌웨어 올리기 "
+
+-- turtlebot3 rules 추가 필요 : dev 권한 자동 설정 
+turtlebot3_bringup/99-turtlebot3-cdc.rules
+
+# /etc/udev/rules.d$ sudo vi 90-arduino.rules
+
+sudo udevadm control --reload-rules
+ : Uno notebook에 USB 연결 
+ vs code 확장 설치 
+ arduino community edition, arduino-snippets
+ 
+ Arduino CLI 설치 <= Arduino IDE 2.3.1 not supported ;; 
+ https://www.arduino.cc/en/software#download
+ 
+ 설정 > 설정 > arduino ==> use arduino cli 체크 
+ F1 > arduino:BoardManager > Arduino AVR Boards 설치 
+ F1 > arduino:BoardConfig
+ F1 > arduino:Rebuild intellisence configuration : .vscode > c_cpp_properties.json 설정 추가 
+   : Ctrl-Alt-I 
+
+-- led 
+ arduino_project/led/led.ino => 노트북에 연결하여 업로드 
+ move_turtle/arduino_led.py Node turtlebos3에서 컴파일/실행 
+  
+  -- switch 
+  move_turtle/arduino_switch.py 
+  
+  -- servo
+F1 > Arduino:Library Manager >> servo install 
+F1 > Arduino:Example 보기 : 외부 확정 예제파일 보고 개발하자.. 
+ =>   
+ arduino_project/servo/servo.ino 
+  move_turtle/arduino_servo.py 
+  urdf에 추가 및 tf 발행 => 
+  ros2 launch move_turtle display.launch.py model:=urdf/turtlebot3_burger.urdf
+rqt /servo topic 발행 테스트 
+
+
+ ** 참고. Serial 통신 
+ROS :   ROS Serial (Turtlebot3) 
+   Uno Board ROS Serial 안 올라감 ... 
+ ROS2 : Micro ROS Serial : 더 무거움..  => 라즈베리파이 피코
+ -- 라즈베리파이 피코 ( 일반, w : wifi ) 
+
+ => 일단 걍 Serial 사용하여 연결 : RasberyPi <=> Arduino
+
+ 
+ === multi robot control .. 
+ domain id 같게 설정, node/interface name 설정 추가, tf 설정 변경 
+ 
+ robot.launch.py => myrobot1.launch.py 
+ burger.yaml => burger.yaml 
+ ros2 launch move_turtle myrobot1.launch.py 
+/opt/ros/foxy/share/hls_lfcd_lds_driver/launch/hlds_laser.launch.py 복사 namespace 추가 .. 
+
+ ros2 run turtlebot3_teleop teleop_keyboard --ros-args  -r __ns:=/myrobot1 
+ 
+ -- tf 수정 : turtlebot3_burger.urdf 
+ 전체 link/joint/parent link/child link/ 이름에 namespace "mylobot/"추가 
+
+-- odom tf 변경 
+odom_tf.header.frame_id => parameter로 세팅 => param/burger.yaml 변경 
+
+ros2 launch move_turtle display.launch.py model:=urdf/turtlebot3_burger.urdf
+
+[2024-11-19 (화) ]
+-- 로봇팔 : openmanipulator_x
+https://emanual.robotis.com/docs/en/platform/openmanipulator_x/quick_start_guide/#install-ros-on-pc
+
+git clone -b humble-devel https://github.com/ROBOTIS-GIT/DynamixelSDK.git
+git clone -b ros2 https://github.com/ROBOTIS-GIT/dynamixel-workbench.git
+git clone -b humble-devel https://github.com/ROBOTIS-GIT/open_manipulator.git
+git clone -b ros2 https://github.com/ROBOTIS-GIT/open_manipulator_msgs.git
+git clone -b ros2 https://github.com/ROBOTIS-GIT/open_manipulator_dependencies.git
+git clone -b ros2 https://github.com/ROBOTIS-GIT/robotis_manipulator.git
+
+ros2 run open_manipulator_x_controller create_udev_rules
+ros2 launch open_manipulator_x_controller open_manipulator_x_controller.launch.py  usb_port:=/dev/ttyUSB0
+ros2 run open_manipulator_x_teleop teleop_keyboard
+ros2 run move_turtle patrol_manipulator
+
+[2024-11-19 (화) ]
+advanced : moveit2 package 설치 : 상대 위치에 대응하는 자동 모터 제어 
+sudo apt install python3-rosdep 
+sudo rosdep init 
+sudo apt update 
+sudo apt dist-upgrade 
+sudo rosdep update 
+moveit_ws 생성 => src => 
+git clone -b humble https://github.com/moveit/moveit2_tutorials.git 
+sudo apt install ros-humble-moveit-*
+rosdep install -r --from-paths . --ignore-src --rosdistro humble -y
+sudo apt remove ros-humble-moveit-*
+
+sudo apt install python3-vcstool => 에러남.. 
+vcs import --recursive < moveit2_tutorials/moveit2_tutorials.repos  => 걍 moveit_ws 파일 카피 
+
+sudo apt update && rosdep install -r --from-paths . --ignore-src --rosdistro humble -y
+colcon build --mixin release 
+
+-- apt dpkg 에러 날때... ㄷㄷㄷ 
+sudo rm -rf /var/lib/dpkg/info/mercurial*
+
+-- colcon build 세밀하게 조작 
+sudo apt install python3-colcon-common-extensions
+sudo apt install python3-colcon-mixin 
+colcon mixin add default https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml
+colcon mixin update default 
+colcon mixin show : 사용법 출력 
+
+-- moveit rviz simulation 
+ros2 launch moveit2_tutorials demo.launch.py  rviz_config:=panda_moveit_config_demo_empty.rviz 
+add Scene Robot, Planning Request => Planning Group : Panda Arm Hand => adjust 
+  => 하단 plan & execute : simulation 수행 
+   use cartesian path : 평면이동 제한 
+   
+-- moveit 프로그램 구동 
+  ros2 run move_turtle_cpp hello_moveit 
+   
+  -- moveit humble pick and place task constructor : 작업 대상 지정 후 정해진 task 수행 
+  
+[2024-11-20 (수) ]
+-- pico board : 3.3v  
+-- uno : 5v 
+-- motor, bluetooth  : any v
+
+-- pico board : micro ros : mcu에 ros middleware 탑재 , network 래핑 => wifi, bluetooth 
+5000원 짜리 보드 ^^ 
+ 교안_ROS2 터틀봇_바인드소프트_10_microros_pico.pptx 참조 
+
+sudo apt install build-essential cmake gcc-arm-none-eabi libnewlib-arm-none-eabi doxygen git python3
+mkdir -p ~/micro_ros_ws/src
+cd ~/micro_ros_ws/src
+git clone --recurse-submodules https://github.com/raspberrypi/pico-sdk.git
+git clone https://github.com/micro-ROS/micro_ros_raspberrypi_pico_sdk.git
+
+-- .bashrc 추가 
+export PICO_SDK_PATH=/home/song/apps/robong/ros2/microros_ws/src/pico-sdk
+export PICO_TOOLCHAIN_PATH=/usr/bin
+
+cd ~/micro_ros_ws/src/micro_ros_raspberrypi_pico_sdk 
+
+vscode 를 열고 컴파일러를 GCC for arm-non eabi 로 선택
+
+Cmake 컴파일
+mkdir build
+cd build
+Cmake .. && make
+
+ git clone https://github.com/freshmea/micro_ros_pico_dev.git
+
+파일 옮기기
+pico_micro_ros_example.elf -> 피코 보드  drag&drop으로 .. 
+micro-ros agent 실행
+설치:  sudo snap install micro-ros-agent
+hotplug 설정 : sudo snap set core experimental.hotplug=true
+systemctl 리스타트 : sudo systemctl restart snapd
+시리얼 포트 상태 확인 : snap interface serial-port
+시리얼 포트 연결 : snap connect micro-ros-agent:serial-port snapd:pico
+micro-ros-agent 실행 : micro-ros-agent serial --dev /dev/ttyACM0 baudrate=115200
+디바이스 권한 설정 : sudo chmod 666 /dev/ttyACM0
+ROS_DOMAIN_ID=0. 으로 해야 함. 설정?
+문제 사항
+연결 상태에서 실행하면 멈추는 현상이 있음 -> 정확한 원인 파악이 우선
+usb를 뺏다가 다시 꽂으면 정상 실행 됨
+USB 를 연결 했을 때 chmod 를 666 으로 계속 재 설정 해야 하는 문제 -> udev 를 통해 해결
+
+-- pico pin map 
+https://openplc.discussion.community/post/raspberry-pi-pico-pinout-for-openplc-12290319
+
+-- servo motor 
+git clone --recurse-submodules https://github.com/irishpatrick/pico-servo.git
+
+sudo chmod 777 /dev/ttyACM0
+sudo micro-ros-agent serial --dev /dev/ttyACM0 baudrate=115200
+
+-- dc motor : 양방향 제어 : motor driver 
+목.c => ttyACM0 인식 안됨... pico 실패닷..
+
+
+[2024-11-21 (목) ]
+pico led_service.c 발행 실습 
+
+- lcd display + i2c interface 
+  i2c : 시간을 구분하여 2개 data로 여러 장치 제어 - max 255개 
+  5v 사용 : 아두이노에 연결 
+  라즈베리파이 3.3v에서 사용 : 추가 장치 필요 
+  
+  arduino_project 
+  arduino:library manager => LiquidCrystal I2C 설치 
+-  LiquidCrystal 예제 
+  https://github.com/fdebrabander/Arduino-LiquidCrystal-I2C-library/blob/master/examples/HelloWorld/HelloWorld.ino
+ - 세팅 메뉴얼 
+  https://codingrun.com/119
+  
+  lcd/lcd.ino 
+  move_turtle/arduino_lcd.py : topic 발행 
+  
+  -- turtlebot3에 arduino 연결 : usb 
+  move_turtle/arduino_lcd.py : /dev/ttyUSB1로 변경 
+  
+라즈베리파이 3.3v에서 사용 : 추가 장치 Logic Level Converter  
+https://blog.naver.com/elepartsblog/221583231746
+
+rp i2c lcd driver 검색 
+https://github.com/eleparts/RPi_I2C_LCD_driver/blob/master/RPi_I2C_driver.py 파일 복사해서 넣기 
+example.py 복사 
+-- smbus 설치 
+pip install smbus 
+sudo apt install python3-smbus 
+sudo chmod 666 /dev/i2c-1
+python3 lcd_exam.py 
+
+lcd i2c port 확인 : sudo i2cdetect -y 1
+
+-- pico board에 lcd 붙이기 서비스 발행 .. 
+
+-- 대기압 고도센서 모듈 (skip) 
+ : spi interface 
+
+[2024-11-22 (금) ]
+-- node 가 많아질수록 topic 수신에 overload 발생 => discovery server 운용 => 같은 subnet만 가능 
+-- 인터넷 연결 ROS2 : Cloud 연결로 강력한 서버 구축 
+  ros2 run demo_nodes_cpp talker
+  ros2 run demo_nodes_cpp listener
+  
+- discovery server 실행 여러개
+https://docs.ros.org/en/foxy/Tutorials/Advanced/Discovery-Server/Discovery-Server.html
+
+export ROS_DISCOVERY_SERVER="127.0.0.1:11811;127.0.0.1:11888"
+    fastdds discovery --server-id 0 -l 127.0.0.1 -p 11812  : 1st server 
+    fastdds discovery --server-id 1 -l 127.0.0.1 -p 11813  : 2nd server 
+	fastdds discovery --server-id 1 -l 127.0.0.1 -p 11813  -- backup  => 연결정보 저장 옵션 
+	
+
+-- super client node : discovery server 실행 시 적용됨. 
+  설정 파일 만들어줌.     /home/super_client_configuration_file.xml
+
+export FASTRTPS_DEFAULT_PROFILES_FILE="super_client_configuration_file.xml"
+rqt 적용을 위해 필용한 설정 파일 : 여러개 server 추가 가능.. 
+https://docs.ros.org/en/foxy/Tutorials/Advanced/Discovery-Server/Discovery-Server.html
+
+-- 동기/비동기 설정 하기 .. dds 설정할 수 있는 것들이 만다는 .. 등등등 ... 
+syncAsync.xml
+/home/song/SyncAsyncsub.xml
+<matchedSubscri
+
+
+simple_ros_cpp/sync_async_writer.cpp => 일반 ROS 환경에서는 안 보인다. 
+=> sync_async_sub.cpp 로 받는다. 
+
+
+--- 3d  printer 
+ 자석 받침, 터치 스크린 
+ network, gcod file => sd card  
+ 
+ bambu studio install 
+ 
+sample model : thingiverse, tinkercad.com 
+autodesk meshmixer : 찰흑처럼 모델링 툴 
+
+
+

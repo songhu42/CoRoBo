@@ -1,0 +1,3 @@
+[2024-11-25(월)] 
+ros2 pkg create --build-type ament_python corobo_py
+ros2 pkg create --build-type ament_cmake corobo_cpp

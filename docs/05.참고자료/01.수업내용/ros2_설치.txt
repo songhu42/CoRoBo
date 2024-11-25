@@ -1,0 +1,381 @@
+sudo rm /var/lib/dpkg/info/*
+sudo dpkg --configure -a 
+sudo apt-get update 
+
+sudo apt update 
+sudo apt upgrade
+sudo apt install libopencv-dev python3-opencv
+
+
+-- 터미널 관리 
+ctrl + shift + e 좌우 분할
+ctrl + shift + o 상하 분할
+ctrl + shift + w 창 닫기
+alrt + 화살표 창 이동
+
+sudo apt install terminate 
+-- 터미널 관리 2 
+sudo apt install  tmux 
+
+ROS2 Humble 
+
+nautilus => ROS 파일 탐색기 
+ROS Hume : 다른위치 > 컴퓨터 > opt/ros/humble/
+share : api library 
+
+ROS Hume/setup.bash 실행 
+source /opt/ros/humble/setup.bash
+
+.bashrc 에 추가해줌.. 
+
+-- turtlesil demo 
+ros2 run turtlesim turtlesim_node 
+-- node 명 변경 
+ros2 run turtlesim  turtlesim_node  --ros-args -r __node:=myNode
+
+-- DDS 데모 퍼블리싱 
+ros2 run demo_nodes_cpp talker 
+ros2 run demo_nodes_cpp listener
+
+ros2 node list 
+ros2 node info /talker 
+
+ros2 param list 
+-- node param  변경 
+ros2 run turtlesim  turtlesim_node  --ros-args  -p background_b:=20 -r __node:=myNode
+
+ros2 run turtlesim  turtle_teleop_key 
+
+rqt_graph : node 연결 그래프 
+rqt 실행 => Plagins>Introspection>NodeGraph 
+
+ros2 topic list 
+ros2 topic echo /turtle1/cmd_vel
+ros2 topic echo /turtle1/pose
+ : 현재 위치정보 : 60번/초 
+ 
+ros2 topic info  /turtle1/cmd_vel
+
+-- cmd topic publishing 
+ros2 interface proto geometry_msgs/msg/Twist 
+ros2 topic pub --once /turtle1/cmd_vel geometry_msgs/msg/Twist "{linear:{x: 3.0 , y: 0.0, z: 0.0}, angular:{x: 0.0, y: 0.0, z: 3.0}}"
+ros2 topic pub --rate 1 /turtle1/cmd_vel geometry_msgs/msg/Twist "{linear:{x: 3.0 , y: 0.0, z: 0.0}, angular:{x: 0.0, y: 0.0, z: 3.0}}"
+
+-- 신호 주기 
+ros2 topic hz /turtle1/pose 
+-- 메시지 사이즈  
+ros2 topic ?? /turtle1/pose 
+
+-- service 
+ros2 service list 
+ros2 service list -t 
+ros2 service call /spawn turtlesim/srv/Spawn "{x: 3, y: 3, theta: 10.0, name: 'gura'}"
+ros2 topic pub --rate 1 /gura/cmd_vel geometry_msgs/msg/Twist "{linear:{x: 3.0 , y: 0.0, z: 0.0}, angular:{x: 0.0, y: 0.0, z: 3.0}}"
+
+
+-- 실행 파라메터 저장/ 불러오기 
+ros2 param dump /turtlesim >> turtlesim.yaml
+ros2 run turtlesim turtlesim_node --ros-args  --params-file turtlesim.yaml 
+
+ros2 param get turtlesim background_b
+ros2 param set turtlesim background_b 100
+
+
+ros2 action list -t
+-- param prototype
+ros2 interface proto turtlesim/action/RotateAbsolute
+-- action send 
+ros2 action send_goal /turtle1/rotate_absolute turtlesim/action/RotateAbsolute "theta: 1.23"
+
+
+-- 개발환경 
+-- colcon build tools 설치 
+sudo apt install python3-colcon-common-extensions
+
+-- workspace/src 폴더 생성 
+robong/ros2/workspace/src
+
+-- create package  
+ros2 pkg create --build-type ament_python SimplePkg
+ros2 pkg create --build-type ament_python Homework1018
+
+ros2 pkg create --build-type ament_cmake simple_ros_cpp
+
+
+ => 소문자로 시작해야 함.. 
+ros2 pkg create --build-type ament_python simple_ros
+ 
+-- setup.py entry point 추가 
+entry_points={
+        'console_scripts': [
+            "hello = SimplePkg.hello:main", 
+            "second = SimplePkg.second:main" 
+        ],
+    },
+	
+-- build 수행 
+robong/ros2/workspace/ colcon build
+
+-- 환경변수 세팅 실행 => .bashrc 추가 
+source /home/song/apps/robong/ros2/workspace/install/local_setup.bash 
+
+-- 프로그램 실행 
+ros2 run SimplePkg hello
+
+-- user interface msg 만들기 
+cd src 
+ros2 pkg create --build-type ament_cmake user_interface
+-- include, src 폴더 없앰 : cpp 소스 필요 없음 
+-- package.xml 
+  <buildtool_depend>rosidl_default_generators</buildtool_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+  <exec_depend>builtin_interfaces</exec_depend>
+  <member_of_group>rosidl_interface_packages</member_of_group>
+
+-- CMakeLists.txt 
+# added 
+find_package(rosidl_default_generators REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME} 
+  "msg/UserInts.msg" 
+  "srv/AddAndOdd.srv"
+  DEPENDENCIES builtin_interfaces) 
+  # added 
+ament_export_dependencies(rosidl_default_runtime)
+
+-- launch 
+
+
+-- interface 
+msg, srv, action 
+
+-- parameter => 서비스로 구성 됨 
+
+-- action => 서비스와 비슷하게 구성 됨 
+service 3개 : send_goal, cancel_goal, get_result 
+topic 2개로 구성 : status, feedback 
+
+
+-- ros2 bag record => ros2 bag play 
+topic 파일에 저장 후 다시 재생 
+
+--RQt : 그래픽 인터페이스 ROS 명령 툴
+ 다양한 rqt plugin 사용 가능 : 183page 
+ 
+-- RViz : 3차원 시각화 툴 
+175page
+
+-- Gazebo : 3차원 시뮬레이션 툴
+=> 이그니션 Gazebo 로 넘어가려는 움직임이 있음. 
+
+-- ros2 [verbs] [sub-verbs] [options] [arguments] 
+ =>사용자 정의 verbs 명령어 추가 가능 : 178page
+ 
+ -- rosdep : 설치할 package.xml 분석하여 모두 설치해 준다. 
+ 
+ 
+ 
+ -- DDS : 같은 네트워크 (3자리 동일) 에서 통신 가능함 
+ windows 가상환경 linux 네트워크 세팅 : 네트워크 어뎁터 >  NAT =>  설정 모두 해제 
+ 공유기 bridge 기능 활성화 필요 
+ 
+ 
+-- thread로 실행 
+calculator/calculator.py
+
+-- arguments parser
+calculator/cal_checker.py
+
+-- logging 
+.bashrc 
+
+export RCUTILS_CONSOLE_OUTPUT_FORMAT="[{severity}] [{name}] : [{message}]"
+export RCUTILS_COLORIZED_OUTPUT=1
+
+
+simple_ros/logging_exam.py 
+-- 한번만 로깅
+self.get_logger().log("print once example....", LoggingSeverity.WARN, once=True)
+-- 조건부 로깅      
+if self.debug_function_to_evaluate():
+    self.get_logger().debug(msg.data)
+
+-- debug log-level
+ros2 run simple_ros logging_exam --ros-args  --log-level debug
+
+
+-- 터틀봇3 버거
+https://www.robotis.com/shop/item.php?it_id=901-0118-202
+https://freshmea.notion.site/ROS2-Open-Seminar-18396a40529b4459b95d4a94f6c1998b#66584b59dc6643e1ab59502e32998f67
+
+가제보는 ROS2에서 제공하는 시뮬레이션 모듈이다. 매우 유용한 기능이 많으므로 사용법을 숙지해 두는게 좋고 로봇 시뮬레이션을 사용하기 위해서는 URDF 작성법도 같이 익혀 두는게 좋다.
+sudo apt-get install ros-humble-gazebo-*
+​
+카토그래퍼는 ROS2에서 지원하는 SLAM 의 하나로 터틀봇3 에서는 라이다 센서 를 기반으로 지도를 제작하게 된다.
+sudo apt install ros-humble-cartographer
+sudo apt install ros-humble-cartographer-ros
+​
+제작한 지도를 바탕으로 터틀봇을 움직이기 위해 설치하는 모듈이다. BT(behavior Tree )를 기반으로 잘 짜여진 네비게이션 모듈이다.
+sudo apt install ros-humble-navigation2
+sudo apt install ros-humble-nav2-bringup
+
+터틀봇을 구동하기 위해 필요한 패키지들을 설치한다. 데비안 패키지 형식의 터틀봇3 와 터틀봇3 메시지 그리고 다이나믹셀 sdk 를 설치한다.
+source ~/.bashrc
+sudo apt install ros-humble-dynamixel-sdk
+sudo apt install ros-humble-turtlebot3-msgs
+sudo apt install ros-humble-turtlebot3
+
+- Wifi 설정을 하기 위해서 SD card 안에 있는 etc/netplan 에 있는 `50-cloud-init.yaml` 파일을 수정하여 WIFI-SSID 와 password 를 넣는다.
+
+cd /media/$USER/writable/etc/netplan
+sudo nano 50-cloud-init.yaml
+turtle/turtlebot3
+
+- PC 와 토픽을 주고 받기 위해서 SD card에 있는 ~/.bashrc 파일에 ROS_DOMAIN_ID를 PC 와 같은 숫자로 입력을 한다.
+
+ROS_DOMAIN_ID=30 #TURTLEBOT3
+
+- LDS-02(라이다) 설정
+
+터틀봇3 LDS 는 2022 년 모델 부터 LDS-01 에서 LDS-02로 바뀌게 되었다. LDS-02 드라이버는 다음과 같이 코드를 받아서 직접 빌드하여 설치 한다.
+
+sudo apt update
+sudo apt install libudev-dev
+cd ~/turtlebot3_ws/src
+git clone -b ros2-devel https://github.com/ROBOTIS-GIT/ld08_driver.git
+cd ~/turtlebot3_ws/src/turtlebot3 && git pull
+rm -r turtlebot3_cartographer turtlebot3_navigation2
+cd ~/turtlebot3_ws && colcon build --symlink-install
+
+빌드가 끝났다면 LDS_MODEL 변수를 .bashrc에 추가한다. 
+
+echo 'export LDS_MODEL=LDS-02' >> ~/.bashrc
+source ~/.bashrc
+
+공유기 
+192.168.0.1 > 192.168.0.25
+
+ssh ubuntu@192.168.0.25
+user id/pw : ubuntu/turtlebot
+
+-- teleop 기본 주행 조작 
+turtlebot3
+ros2 launch turtlebot3_bringup robot.launch.py
+
+notebook 
+ros2 run turtlebot3_teleop teleop_keyboard 
+
+
+-- turtlebot3 project 
+-- foxy python 버전 pkg 생성 
+ros2 pkg create --build-type ament_python move_turtle ???
+
+
+-- component 확인 
+ros2 component types 
+ros2 run rclcpp_components component_container
+ros2 component list 
+ros2 component load /ComponentManager simple_ros_cpp composition::Talker 
+ros2 component load /ComponentManager simple_ros_cpp composition::Listener 
+
+-- gazebo 
+-- gazebo-turtlebot 설치 메뉴얼 
+https://emanual.robotis.com/docs/en/platform/turtlebot3/simulation/#gazebo-simulation
+
+ros2 launch gazebo_ros gazebo.launch.py use_sim_time:=true
+
+insert>add path 
+/home/song/apps/apps/robong/ros2/turtlebot3_ws/src/turtlebot3_simulations/turtlebot3_gazebo/models/turtlebot3_burger
+
+-- running processors 
+gazebo
+gzserver : killgazebo 
+gzclient
+
+-- rviz2 : 3차원 시뮬 tool with tf2(transfomation)
+ : 정적 tf, 동적 tf 발행 => urdf description : turtlebot3_bugger.urdf
+  => gazebo와 turtlebot3 spawn 명령 실행해야   
+  ros2 launch turtlebot3_gazebo empty_world.launch.py
+
+-- rqt : user interface plugin .
+ qt creater 이용하여 개발 
+
+sudo apt install qtcreator
+sudo apt install pyqt5-dev-tools 
+
+-- rqt_example download for new workspace 
+git clone https://github.com/robotpilot/ros2-seminar-examples.git
+
+-- 강재로 plugin 추가 
+~/.config/ros.org/rqt_gui.ini
+discovery_data\rqt_gui.RospkgPluginProvider\rqt_gui\my_rqt_plugin=/home/song/apps/robong/ros2/workspace/install/my_rqt_plugin/share/my_rqt_plugin/plugin.xml
+
+
+-- lifecycle 
+ros2 launch simple_ros_cpp lifecycle_demo.launch.py
+ros2 lifecycle set /lc_talker configure => activate => shutdown 
+
+-- turtle tf : 위치정보 발행 예제 
+sudo apt install ros-humble-turtle-tf2-py
+
+ros2 launch turtle_tf2_py turtle_tf2_demo.launch.py 
+ros2 run turtlesim turtle_teleop_key 
+rviz2 실행  : 하단 TF 추 가 => Fixed Frame 'world' 추가 
+
+-- static tf 발행 : 1.static_tf, 2. 내부함수 tf2_ros sttic_tf2_broadcaster , 3.urdf 파일에 기술 ..  
+simple_ros_cpp static_tf.cpp 
+ros2 run simple_ros_cpp static_tf static_turtle_tf2_broadcaster 0 0 1 0 0 0 
+ros2 launch simple_ros_cpp tf_turtle.launch.py
+
+-- dynamic tf : 1.dynamic_tf, 2. 내부함수 tf2_ros dynamic_tf2_broadcaster (?), 3.urdf 파일에 기술 ..  
+simple_ros_cpp dynamic_tf.cpp 
+ros2 launch simple_ros_cpp tf_turtle_dy.launch.py
+
+-- tf_listener : 두 tf 사이의 변환 연산을 제공 
+
+
+-- SROS2 : Security
+ros2 security create_keystore key_box 
+ros2 security create_key key_box  /hello_pub
+ros2 security create_key key_box  /hellosub
+
+.bashrc 
+export ROS_SECURITY_KEYSTORE=~/apps/robong/ros2/workspace/key_box
+export ROS_SECURITY_ENABLE=true 
+export ROS_SECURITY_STRATEGE=Enforce 
+
+ros2 run simple_ros hello_pub --ros-args --enclave /hello_pub
+ros2 run simple_ros hello_sub --ros-args --enclave /hellosub
+
+-- realtime demos 
+git clone -b humble https://github.com/ros2/demos.git
+
+-- turtlebot3 opencr board usb 설정 
+https://github.com/ROBOTIS-GIT/OpenCR/tree/foxy-devel
+99-opencr-cdc.rules file 
+
+-- opencr firmware update 
+https://emanual.robotis.com/docs/en/platform/turtlebot3/opencr_setup/#opencr-setup
+
+export OPENCR_PORT=/dev/ttyACM0
+export OPENCR_MODEL=burger
+
+wget https://github.com/ROBOTIS-GIT/OpenCR-Binaries/raw/master/turtlebot3/ROS2/latest/opencr_update.tar.bz2
+
+
+
+OpenCR 보드 : 10만원?
+라즈베리파이 - USB - 라이다  : /dev/ttyUSB0
+ 	    - USB - OpenCR : /dev/ttyACM 
+ 	    - camera : /dev/VIDEO
+ 	    - Moter(Dynamixel) : /dev/tty??
+로보티스 github 
+https://github.com/ROBOTIS-GIT/DynamixelSDK 	    
+ 	    
+ 	    
+Ubunto 20.04
+ROS_DISTRO : foxy (humble 아님)
+
+VS Code remote connection 
+
+

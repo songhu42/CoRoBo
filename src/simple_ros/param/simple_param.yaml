@@ -1,0 +1,6 @@
+/simple_param:
+  ros__parameters:
+    my_param: "런치에서 정한 파라미터"
+    node_name: simple_param
+    num1: 456
+    num2: 1.123

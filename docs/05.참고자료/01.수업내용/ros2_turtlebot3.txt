@@ -1,0 +1,246 @@
+-- gazebo 
+ros2 launch gazebo_ros gazebo.launch.py use_sim_time:=true
+
+insert>add path 
+/home/song/apps/apps/robong/ros2/turtlebot3_ws/src/turtlebot3_simulations/turtlebot3_gazebo/models/turtlebot3_burger
+
+  => gazebo와 turtlebot3 spawn 명령 실행  
+  ros2 launch turtlebot3_gazebo empty_world.launch.py
+
+-- rviz2 : 3차원 시뮬 tool with tf2(transfomation)
+
+
+-- with turtlebot3 
+ros2 launch turtlebot3_bringup robot.launch.py
+ros2 run move_turtle follow_wall
+
+
+-- tf를 활용한 이동 
+-- urdf 파일 작성 
+move_turtle/urdf/myfirst.urdf 
+rviz2
+save config : move_turtle/urdf/urdf.rviz 
+
+-- urdf : 로봇 설계도 
+- urdf_launch : robot_state_publisher => /tf, /static_tf 발행 
+
+ - link : /tf 
+ - joint : link-link 연결 정보, type : fixed => /static_tf , continuous : 연속 회전, revolute : 각 회전 (서보), pristmatic : 직선 왕복운동 
+ - origin : 원점 
+  - visual : 형태 
+  - inertial >>  mass, inertia,  collision : 충돌 
+  
+-- urdf => rviz2에 표출 
+ros2 launch move_turtle display.launch.py model:=urdf/multipleshapes.urdf
+
+xacro : macro, 변수, 수학식 표현   =>  변환 cmd : xacro model.xacro > test.urdf 
+
+-- xacro 파일 직접 실행 launch example 
+ros2 launch move_turtle xacro_display.launch.py model:=urdf/macroed.urdf.xacro
+
+urdf + sdf  => gazebo 구동 
+sdf : 행동 sensor define, plugin 추가 (.so) :  /home/song/apps/robong/ros2/turtlebot3_ws/src/turtlebot3_simulations/turtlebot3_gazebo/models/turtlebot3_burger/model-1_4.sdf
+so : shared object 제공 여부  : gazebo tutorial 
+https://classic.gazebosim.org/tutorials?tut=ros_gzplugins
+
+-- mashes 작성 3d design 회로도 
+https://www.tinkercad.com/dashboard
+=> 내보내기 obj 형식  => obj to dae converter
+
+-- follow_wall : 벽 앞에 tf를 발행하여 tf를 이용한 벽 타기 수행 
+ 1. 라이더 이용 벽 위치 파악 => 직각방향 40cm 앞 point 계산 => tf 계산 => tf 발행
+ 2. turtlebot3 이동 구현 
+
+-- publish map 
+simple_ros_cpp.publish_map
+
+for(auto &elm : msg.data)  elm = -1; // -1 : 탐사 안됨, 0 : 못감,  1~100 : 갈 수 있음. 
+			
+=> google cartographer : SLAM(Simultaneous Localization And Mapping) 
+-- ROS2-Cartographer Workshop 
+https://ros2-industrial-workshop.readthedocs.io/en/latest/_source/navigation/ROS2-Cartographer.html
+
+-- sample world map publish 
+ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py use_sim_time:=true 
+ros2 launch turtlebot3_cartographer cartographer.launch.py use_sim_time:=true 
+ros2 run turtlebot3_teleop teleop_keyboard 
+
+rqt > node graph 확인 
+
+cartographer imu option , occupancy option 사용 
+/opt/ros/humble/share/turtlebot3_cartographer/launch/catographer.launch.py 
+=> config/ 변경 
+/opt/ros/humble/share/turtlebot3_cartographer/config/turtlebot3_lds_2d.lua
+TRAJECTORY_BUILDER_2D.use_imu_data = true
+
+
+-- map 저장 
+ros2 run nav2_map_server map_saver_cli -f map_name 
+ == map_name.pgm , map_name.yaml 
+
+
+-- 지도를 활용한 이동 
+arquified grid map 
+
+-- ROS-2-Navigation 
+ : BT(Behavior Tree)  Navigation Server 
+ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
+-- fixed frame : odom 변경 
+-- static_tf 발행 
+ros2  run tf2_ros static_transform_publisher  --x -2.0 --y -0.5 --z 0 --yaw 0 --pitch 0 --roll 0 --frame-id odom --child-frame-id map --ros-args -p use_sim_time:=true 
+
+ros2 lifecycle  set /map_server activate 
+ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=true map:=/home/song/my_map.yaml
+
+-- 정의할 수 있는 param 확인 
+ros2 launch turtlebot3_navigation2 navigation2.launch.py --show-args
+
+-- map_server service 상태 확인 
+ros2 lifecycle get /map_server
+
+-- turtlebot3 맵이용 이동
+ssh ubuntu@192.168.0.25 
+ros2 launch turtlebot3_bringup robot.launch.py
+
+ros2 launch turtlebot3_cartographer cartographer.launch.py 
+ros2 run turtlebot3_teleop teleop_keyboard 
+ros2 run nav2_map_server map_saver_cli -f class_room  
+
+ros2 launch turtlebot3_navigation2 navigation2.launch.py map:=/home/song/apps/robong/ros2/workspace/class_room.yaml
+ros2 lifecycle  set /map_server activate 
+ros2  run tf2_ros static_transform_publisher  --x 0.0 --y 6.5 --z 0 --yaw 0 --pitch 0 --roll 0 --frame-id odom --child-frame-id map --ros-args -p use_sim_time:=true 
+
+
+2D 포즈 추정” 버튼을 클릭
+
+-- nav2 docs
+docs.nav2.org/index.html 
+
+turtlebot3_navigation2/param/burger.yaml : 튜닝을 위한 상세 세팅 가능 
+
+
+-- camera 사용하기 스타트 
+-- 카메라 활용 매칭 - 
+1. 템플릿 : 크기 제한 등 
+2. YOLO v11 : 위치 파악 어려움. 
+3. aruco marker : tf 활용, 가장 용이 
+4. depth camera : 공간정보 파악 용이, 장비 없음. 
+
+sudo apt install v4l-utils ros-humble-v4l2-camera ros-humble-image-transfort
+
+/dev/video0 group video 로 세팅 
+
+-- rasberypi 4 이상에서 사용 v4l2 :  video for linux 
+ros2 run v4l2_camera v4l2_camera_node --ros-args -p image_size:="[640,480]" -p camera_frame_id:=camera_optical_link
+ros2 param dump v4l2-camera
+
+-- rasberypi 3 에서 사용 
+ros2 run raspicam2 raspicam2_node --ros-args --params-file `ros2 pkg prefix raspicam2`/share/raspicam2/cfg/params.yaml
+
+-- pkg 위치 확인 및 parameter 조정  
+ros2 pkg prefix raspicam2
+
+ === 2024.11.12
+-- gazebo camera sensor 추가 
+macroed.urdf.xacro : 에러남 
+ros2 launch move_turtle display.launch.py model:=urdf/model.sdf 
+
+-- los2_aruco AR markers
+git clone -b humble https://github.com/JMU-ROBOTICS-VIVA/ros2_aruco.git
+.git dir 삭제 
+pip3 install opencv-contrib-python transforms3d
+sudo apt install ros-humble-tf-transformations
+pip list | grep numpy 
+pip install numpy==1.26.4
+
+camera_optical_link t 생성 필요 : ros와 카메라의 xyz 기준이 다름 
+x, z축 180도 회전한 link 생성 
+
+
+-- id별 marker 이미지 생성 
+ros2 run ros2_aruco aruco_generate_marker --id 42 --dictionary DICT_5X5_100 
+
+-- 카메라 토픽을 image_raw로 변환하고, topic 명 변경해줌.. 
+ros2 run image_transport republish compressed raw  --ros-args -r in/compressed:=/camera/image/compressed -r out:=/camera/image_raw
+
+ros2 topic list -t 
+
+ros2 run ros2_aruco aruco_node --ros-args -p marker_size:=0.1 -p dictionary_id:=DICT_5X5_100 -p camera_info_topic:=/camera/camera_info 
+ros2 topic echo /aruco_markers
+
+== > launch 로 통합 실행 
+1. turtlebot3 에서 
+ros2 launch move_turtle robot_camera.launch.py 
+
+2.note book 에서 
+ros2 launch move_turtle aruco_launch.launch.py 
+
+3.marker 확인 
+ros2 topic echo /aruco_markers
+
+-- gazebo에서 aruco marker 활용 
+https://github.com/joselusl/aruco_gazebo.git
+-- launch 파일 수정 
+ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
+python3 led_test.py  
+
+-- auto racing world 추가 
+ros2 launch turtlebot3_gazebo turtlebot3_autorace_2020.launch.py
+
+-- turtlebot3 GPIO control 
+-- rasberypi pin map 
+  : https://armyost.tistory.com/347
+
+sudo apt install python3-rpi.gpio
+
+  153 python3 -m pip install rpi.gpio
+  154  sudo groupadd gpio
+  155  sudo usermod -a -G gpio ubuntu
+  156  sudo grep gpio /etc/group
+  157  sudo chown root.gpio /dev/gpiomem
+  158  sudo chmod g+rw /dev/gpiomem
+
+ === 2024.11.13
+-- turtlebot3 PWM control 
+python3 servo_test.py 
+
+=> lifecycle 이용 topic 제어가 유용 : 동작, release 제어 
+
+-- tb_interface package srv, msg 추가 
+move_turtle.ServoAngle.srv 
+
+ -- wiringPi 설치 : cpp gpio 컨트롤 
+sudo apt install wiringpi 
+sudo apt install libwiringpi2
+
+ -- servo_sub.cpp 
+ cbp move_turtle_cpp 
+ => wiringPi.h: 그런 파일이나 디렉터리가 없습니다
+ 
+ 
+권한문제 발생  => sudo ros2 실행 방법 
+sudo -E bash -c 'source /opt/ros/foxy/setup.bash; source /home/ubuntu/robot_ws/install/setup.bash; ros2 run move_turtle_cpp servo_sub' 
+ 
+ 
+-- cpp gpio 컨트롤 두번째 방법  : pigpio 데몬 실행
+ git clone https://github.com/joan2937/pigpio.git
+ubuntu@ubuntu05:~$ cd pigpio 
+ubuntu@ubuntu05:~/pigpio$ mkdir build
+ubuntu@ubuntu05:~/pigpio$ cd build
+ubuntu@ubuntu05:~/pigpio/build$ cmake ..
+make
+sudo make install 
+=> /usr/local/lib 
+ : chown, chmod 
+
+sudo ldconfig  : shard object 관리 프로그램 실행해야 함. 
+sudo ./x_pigpio : 초기화 
+sudo pigpiod : demon 실행 
+
+
+=> 요걸로 해보자 .
+/home/song/apps/aiot_2024_robot/pptpdf/ROS2/교안_ROS2 터틀봇_바인드소프트_10_microros_pico_servo.pptx
+ 
+ -- 가변저항 
+ 라즈베리파이 사용 불가 => adc module 통해 SPI 통신 
+ I2C통신 
