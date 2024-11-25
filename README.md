@@ -10,7 +10,7 @@
 #### .CoRoBo_commands.txt 는 계속 업데이트할 파일임. 
 
 
-#### **작업 계획서 <https://docs.google.com/spreadsheets/d/1Ax51eHTzGg0aRhSEcF578aqg9tlRLEkP7mvnGKbirCw/edit?usp=sharing>
+#### **[작업 계획서 공유 시트](https://docs.google.com/spreadsheets/d/1Ax51eHTzGg0aRhSEcF578aqg9tlRLEkP7mvnGKbirCw/edit?usp=sharing)
 
 ---
 ## * 폴더 구조  
