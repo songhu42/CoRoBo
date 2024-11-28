@@ -1,3 +1,6 @@
+import os
+from glob import glob
+
 from setuptools import find_packages, setup
 
 package_name = 'corobo_py'
@@ -10,6 +13,8 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/' + package_name + '/launch', glob(os.path.join('launch', '*.launch.py'))), 
+        ('share/' + package_name + '/param', glob(os.path.join('param', '*.yaml')))
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -20,6 +25,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            "action_server = corobo_py.action_server:main",
+            "action_client = corobo_py.action_client:main",
+            "crbs_move = corobo_py.crbs_move:main",
         ],
     },
 )
