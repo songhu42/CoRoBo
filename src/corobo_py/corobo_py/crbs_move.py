@@ -9,7 +9,7 @@ from rclpy.qos import (
     QoSReliabilityPolicy,
 )
 from turtlesim.msg import Color, Pose
-import crb_db
+import corobo_py.crb_db as crb_db 
 
 class CrbsMove(Node):
     def __init__(self):
@@ -33,7 +33,7 @@ class CrbsMove(Node):
         self.get_logger().info(f"test_db start in node...")
         crb_db.test_db(self.get_logger())
 
-
+    # self.twist update 후 cmd_vel 발행 
     def twist_pub(self):
         self.pub.publish(self.twist)
 
