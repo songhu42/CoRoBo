@@ -10,7 +10,7 @@ ros2 pkg create --build-type ament_cmake crb_interface
 alias gs='git status'
 alias ga='git add --a'
 alias gc='git commit'
-alias gp='git push && git pull'
+alias gp='git pull && git push'
 
 
 alias cw='cd ~/apps/CoRoBo'
@@ -30,3 +30,6 @@ IP : 192.168.0.17
 DB : corobodb
 ID/PW : corobo/corobo12 
 DB root : root/lanos
+
+
+pip install mysql-connector-python

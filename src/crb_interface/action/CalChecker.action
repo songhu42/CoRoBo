@@ -1,8 +1,0 @@
-int32 req_step
----
-string[] all_formula
-float32[] feedback_res
-float32 result_res
----
-string feedback_formula
-float32[] feedback_res

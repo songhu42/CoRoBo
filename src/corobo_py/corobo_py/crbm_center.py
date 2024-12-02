@@ -1,5 +1,8 @@
 import rclpy
 from rclpy.node import Node
+from geometry_msgs.msg import Twist
+from rclpy.duration import Duration
+from rclpy.node import Node
 from rclpy.qos import (
     QoSDurabilityPolicy,
     QoSHistoryPolicy,
@@ -10,10 +13,17 @@ from std_msgs.msg import String
 from std_srvs.srv import SetBool 
 import time
 
-class Service_server(Node):
+# CoRoBo Service Centor .. 
+# moveto, move, armto, greep ... 
+
+class CrbmCenter(Node):
     def __init__(self):
-        super().__init__("crebs_center")
-        self.create_timer(1, self.print_hello)
+        super().__init__("crebm_center")
+
+        # 나의 현재 정보 publishing 
+        self.create_timer(1/10, self.update_me)
+        self.pub = self.create_publisher(Twist, "cmd_vel", self.qos_profile)
+
         self.create_service(SetBool, "setBoolService", self.setBool_callback) 
         self.bool = bool()
         self.count = 0
@@ -34,13 +44,13 @@ class Service_server(Node):
 
         return response
 
-    def print_hello(self):
+    def update_me(self):
         #self.get_logger().info(f"current bool : {self.bool}")
         pass
 
 def main():
     rclpy.init()
-    node = Service_server()
+    node = CrbmCenter()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

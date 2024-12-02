@@ -27,7 +27,12 @@ setup(
         'console_scripts': [
             "action_server = corobo_py.action_server:main",
             "action_client = corobo_py.action_client:main",
-            "crbs_move = corobo_py.crbs_move:main",
+            "crbm_center = corobo_py.crbm_center:main",
+            "crbs_server = corobo_py.crbs_server:main",
+            "crbs_mani = corobo_py.crbs_mani:main",
+            "patrol_manipulator = corobo_py.patrol_manipulator:main",
+            "teleop_keyboard = corobo_py.teleop_keyboard:main",
+            
         ],
     },
 )

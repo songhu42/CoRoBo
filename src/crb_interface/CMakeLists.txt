@@ -17,12 +17,9 @@ find_package(rosidl_default_generators REQUIRED)
 # find_package(<dependency> REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME} 
-  "msg/UserInts.msg" 
-  "srv/AddAndOdd.srv"
+  "msg/CrbsCmdMsg.msg" 
+  "srv/CrbsCmdSrv.srv"
   "action/Fibonacci.action"
-  "msg/CalArguments.msg" 
-  "srv/CalOperate.srv"
-  "action/CalChecker.action"
   DEPENDENCIES builtin_interfaces) 
   
 if(BUILD_TESTING)
