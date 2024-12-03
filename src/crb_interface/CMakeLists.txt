@@ -19,6 +19,7 @@ find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME} 
   "msg/CrbsCmdMsg.msg" 
   "srv/CrbsCmdSrv.srv"
+  "srv/CrbsArmSrv.srv"
   "action/Fibonacci.action"
   DEPENDENCIES builtin_interfaces) 
   
@@ -33,5 +34,8 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
+
+# added 
+ament_export_dependencies(rosidl_default_runtime)
 
 ament_package()

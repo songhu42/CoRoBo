@@ -1,0 +1,12 @@
+builtin_interfaces/Time stamp
+bool is_gripper
+float32 joint1
+float32 joint2
+float32 joint3
+float32 joint4
+float32 gripper
+float32 path_time
+---
+builtin_interfaces/Time stamp
+bool success
+string message
