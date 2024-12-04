@@ -1,0 +1,104 @@
+터틀봇3 명령어
+
+시동(브링업) 명령어
+ros2 launch turtlebot3_manipulation_bringup hardware.launch.py
+
+그립퍼 열기 명령어
+ros2 action send_goal /gripper_controller/gripper_cmd control_msgs/action/GripperCommand "{command: {position: 0.023, max_effort: 50.0}}“
+
+그립퍼 닫기 명령어
+ros2 action send_goal /gripper_controller/gripper_cmd control_msgs/action/GripperCommand "{command: {position: -0.014, max_effort: 50.0}}"
+
+팔 들기
+ros2 action send_goal /arm_controller/follow_joint_trajectory control_msgs/action/FollowJointTrajectory "{trajectory: {joint_names: ['joint1', 'joint2', 'joint3', 'joint4'], points: [{positions: [0.0, 0.0, 0.0, 0.0], time_from_start: {sec: 1, nanosec: 0}}]}}"
+
+팔 내리기
+ros2 action send_goal /arm_controller/follow_joint_trajectory control_msgs/action/FollowJointTrajectory "{trajectory: {joint_names: ['joint1', 'joint2', 'joint3', 'joint4'], points: [{positions: [0.0, 1.6, -0.8, -0.8], time_from_start: {sec: 1, nanosec: 0}}]}}"
+
+팔 원위치
+ros2 action send_goal /arm_controller/follow_joint_trajectory control_msgs/action/FollowJointTrajectory "{trajectory: {joint_names: ['joint1', 'joint2', 'joint3', 'joint4'], points: [{positions: [0.0, -1.5785, 1.2241, 0.2654], time_from_start: {sec: 1, nanosec: 0}}]}}"
+
+바퀴는 추후에 
+
+
+
+### Services:
+/arm_controller/describe_parameters
+/arm_controller/get_parameter_types
+/arm_controller/get_parameters
+/arm_controller/list_parameters
+/arm_controller/set_parameters
+/arm_controller/set_parameters_atomically
+/controller_manager/configure_and_start_controller
+/controller_manager/configure_controller
+/controller_manager/describe_parameters
+/controller_manager/get_parameter_types
+/controller_manager/get_parameters
+/controller_manager/list_controller_types
+/controller_manager/list_controllers
+/controller_manager/list_hardware_interfaces
+/controller_manager/list_parameters
+/controller_manager/load_and_configure_controller
+/controller_manager/load_and_start_controller
+/controller_manager/load_controller
+/controller_manager/reload_controller_libraries
+/controller_manager/set_parameters
+/controller_manager/set_parameters_atomically
+/controller_manager/switch_controller
+/controller_manager/unload_controller
+/diff_drive_controller/describe_parameters
+/diff_drive_controller/get_parameter_types
+/diff_drive_controller/get_parameters
+/diff_drive_controller/list_parameters
+/diff_drive_controller/set_parameters
+/diff_drive_controller/set_parameters_atomically
+/gripper_controller/describe_parameters
+/gripper_controller/get_parameter_types
+/gripper_controller/get_parameters
+/gripper_controller/list_parameters
+/gripper_controller/set_parameters
+/gripper_controller/set_parameters_atomically
+/hlds_laser_publisher/describe_parameters
+/hlds_laser_publisher/get_parameter_types
+/hlds_laser_publisher/get_parameters
+/hlds_laser_publisher/list_parameters
+/hlds_laser_publisher/set_parameters
+/hlds_laser_publisher/set_parameters_atomically
+/imu_broadcaster/describe_parameters
+/imu_broadcaster/get_parameter_types
+/imu_broadcaster/get_parameters
+/imu_broadcaster/list_parameters
+/imu_broadcaster/set_parameters
+/imu_broadcaster/set_parameters_atomically
+/joint_state_broadcaster/describe_parameters
+/joint_state_broadcaster/get_parameter_types
+/joint_state_broadcaster/get_parameters
+/joint_state_broadcaster/list_parameters
+/joint_state_broadcaster/set_parameters
+/joint_state_broadcaster/set_parameters_atomically
+/robot_state_publisher/describe_parameters
+/robot_state_publisher/get_parameter_types
+/robot_state_publisher/get_parameters
+/robot_state_publisher/list_parameters
+/robot_state_publisher/set_parameters
+/robot_state_publisher/set_parameters_atomically
+
+### Actions:
+/arm_controller/follow_joint_trajectory control_msgs/action/FollowJointTrajectory
+/gripper_controller/gripper_cmd control_msgs/action/GripperCommand
+
+### Topics:
+/arm_controller/joint_trajectory
+/arm_controller/state
+/cmd_vel
+/dynamic_joint_states
+/imu_broadcaster/imu
+/joint_states
+/odom
+/parameter_events
+/robot_description
+/rosout
+/scan
+/servo_node/delta_joint_cmds
+/tf
+/tf_static
