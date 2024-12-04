@@ -10,7 +10,6 @@ from rclpy.qos import (
 )
 from turtlesim.msg import Color, Pose
 import corobo_py.crb_db as crb_db 
-import corobo_py.crbs_mani as crbs_mani 
 from crb_interface.srv import CrbsCmdSrv
 from crb_interface.srv import CrbsArmSrv
 from crb_interface.msg import CrbsCmdMsg
@@ -19,8 +18,8 @@ from geometry_msgs.msg import Vector3
 from rclpy.callback_groups import ReentrantCallbackGroup
 # 순차적으로 실행해야 할때.. 
 # from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
-import asyncio
 import time 
+import traceback
 
 class CrbsServer(Node):
     def __init__(self, node1=None):
@@ -33,7 +32,7 @@ class CrbsServer(Node):
         # TODO : read from DB for base position 선자세 각도 기준 
         self.base_angles = [0.0, 0.0, -1.5, 0.0, 0.0]
         self.joint_angles = [0.0, 0.0, -1.5, 0.0, 0.0]
-        self.prev_angles = [0.0, 0.0, -1.5, 0.0, 0.0]
+        self.prev_angles = [0.0, 0.0, 0.0, 0.0, 0.0]
 
         super().__init__("crbs_server")
         self.qos_profile = QoSProfile(history=QoSHistoryPolicy.KEEP_LAST,
@@ -42,7 +41,7 @@ class CrbsServer(Node):
                                       depth=10)
         # set slow for test .. 0.1 => 1.0, 1/20 => 0.1 
         self.create_timer(1.0, self.twist_pub)
-        self.create_timer(0.1, self.update)
+        # self.create_timer(0.1, self.update)
         
         self.create_service(CrbsCmdSrv, "crbs_m_server", self.crbs_cmd_callback, callback_group=self.callback_group) 
 
@@ -59,28 +58,25 @@ class CrbsServer(Node):
         self.twist = Twist()
         self.pose = Pose()
 
-        self.count = 0
-        self.phase = 0
         self.prev_time = self.get_clock().now()
 
+        # reading from request .. 
         self.act_dur = 0.5
         self.act_step = 8
         self.act_delay_factor=0.9 
 
         # db parameters loading ...  
-        self.get_logger().info(f"test_db start in node..33.")
-        crb_db.test_db(self.get_logger())
-        self.get_logger().info(f"test_db end in node...")
-
+        self.conn = None
+        self.cursor = None 
 
     def crbs_cmd_callback(self, request:CrbsCmdSrv.Request, response:CrbsCmdSrv.Response):
         self.get_logger().info(f"crbs_cmd_callback ")
-        self.get_logger().info(f"crbs_cmd_callback data : {request.cmd}")
+        self.get_logger().info(f"crbs_cmd_callback cmd : {request.cmd}")
         self.req = request
         self.cmd = self.req.cmd
 
-        self.count += 1
         try:
+                
             # 요청 데이터 가공이 필요한 경우 수행한다. 
             # TODO:정해진 목표점으로 이동한다. 목표점에 tf 발행 후 tf를 향한 이동 구현 
             if self.cmd == "moveto":
@@ -111,7 +107,7 @@ class CrbsServer(Node):
                 response.y = 0.0
                 response.z = 0.0
             # 단순히 지정된 각도로 로봇팔을 움직인다. 
-            elif self.cmd == "arm":
+            elif self.cmd == "arm_joint":
                 #[0, 0, -1.5, 0]
                 # joint1 + : left, joint2,3,4 + : down 
                 # test position1 [0.1, 0.6, 0.9, -1.27]
@@ -119,45 +115,79 @@ class CrbsServer(Node):
                 # => 0.095, 0.5, 0.63, -1.25 
                 # => 0.095, 0.11, 0.47, -0.68 
                 # => 0.095, 0.01, 0.06, -0.04 
+                #self.act_dur = 0.5
+                #self.act_step = 8
+                #self.act_delay_factor = 0.8 
 
-                # TODO: read parameter from db 
-                self.act_dur = 0.5
-                self.act_step = 8
-                self.act_delay_factor = 0.8 
+                # set parameter from req  
+                self.act_dur = self.req.act_dur 
+                self.act_step = self.req.act_step 
+                self.act_delay_factor = self.req.act_delay_factor  
 
                 # TODO : remove for test 
-                self.prev_angle = [0.092, 0.0153, -0.0598, -0.0414, -0.005] # origin
-                #self.prev_angle = [0.0, 0.0, -1.5, 0.0, 0.002] # 위쪽 
-                #self.prev_angle = [1.0, 1.0, -1.5, -0.5, 0.002] # 비틀기 
+                #self.prev_angles = [0.092, 0.0153, -0.0598, -0.0414, -0.005] # origin
+                #self.prev_angles = [0.0, 0.0, -1.5, 0.0, 0.002] # 위쪽 
+                #self.prev_angles = [1.0, 1.0, -1.5, -0.5, 0.002] # 비틀기 
 
                 #req_joint_pos = [0.092, 0.0153, -0.0598, -0.0414, 0.0] # origin
-                #self.prev_angle = [0.0, 0.0, -1.5, 0.0, 0.002] # 위쪽 
-                req_joint_pos = [1.0, 1.0, -1.5, -0.5, self.req.x] # 비틀기 
+                #self.prev_angles = [0.0, 0.0, -1.5, 0.0, 0.002] # 위쪽 
+                #req_joint_pos = [1.0, 1.0, -1.5, -0.5, self.req.x] # 비틀기 
 
-                # self.req_move_joint(req_joint_pos)
+                req_joint_pos = [self.req.x, self.req.y, self.req.z, self.req.w, self.prev_angles[4]] # 비틀기 
+
+                # prev values init setting ... 
+                self.init_prev_angles(req_joint_pos)
+                self.req_move_joint(req_joint_pos)
+
+                response.success = True 
+                response.result = "Success req_move_joint"
+                response.x = self.prev_angles[0]
+                response.y = self.prev_angles[1]
+                response.z = self.prev_angles[2]
+                response.w = self.prev_angles[3]
+
+            elif self.cmd == "arm_gripper":
+                # set parameter from req  
+                self.act_dur = self.req.act_dur 
+                self.act_step = self.req.act_step 
+                self.act_delay_factor = self.req.act_delay_factor  
+
+                req_joint_pos = [self.prev_angles[0], self.prev_angles[1], self.prev_angles[2], self.prev_angles[3], self.req.x] # 비틀기 
                 self.req_move_gripper(req_joint_pos)
-            
-                # self.mani_node.joint_angles = [self.req.x, self.req.y, self.req.z, 0.0, 1.0]
-                response.result = "Success"
-                response.x = 0.0
+
+                response.success = True 
+                response.result = "Success req_move_joint"
+                response.x = self.prev_angles[4]
                 response.y = 0.0
                 response.z = 0.0
+                response.w = 0.0
             else :
                 response.result = "Wrong Cmd"
                 response.x = 0.0
                 response.y = 0.0
                 response.z = 0.0
+                response.w = 0.0
+
+            response.success = True 
 
         except Exception as e:
-            self.get_logger().info(f"CrbsCmd Exception !! => {e.__doc__}")
-            self.get_logger().info(e.__doc__)
-            self.get_logger().info(e.__traceback__)
-            # self.get_logger().info('Tool control failed %r' % (e,))
-            response.result = "Exception occured!!!!"
+            self.get_logger().error(f"CrbsCmd Exception !! => {e.__doc__}")
+            self.get_logger().error(traceback.format_exc())
+            response.success = False 
+            response.result = f"Exception occured!!!! => {e.__doc__}"
         finally:
             return response
 
-    
+    def init_prev_angles(self, angles):
+        if self.prev_angles[0] == 0.0 and self.prev_angles[1] == 0.0 and self.prev_angles[2] == 0.0 and self.prev_angles[3] == 0.0 :
+            for i in range(5):
+                self.prev_angles[i] = angles[i]
+
+    def set_prev_angles(self, angles):
+        for i in range(5):
+            self.prev_angles[i] = angles[i]
+
+
     def req_move_joint(self, req_joint_pos):
         # rate = self.create_rate(1.0/act_dur)
         self.get_logger().info(f"req_move_joint called {req_joint_pos} step : {self.act_dur}")
@@ -177,11 +207,12 @@ class CrbsServer(Node):
             self.arm_req_future = self.arm_client.call_async(self.arm_req)
             self.arm_req_future.add_done_callback(self.response_arm_callback)
 
-            self.prev_angle = self.joint_angles
+            self.set_prev_angles(self.joint_angles)
             # 전체 이동시간이 끝나기 전에 다음 이동이 있는 경우 호출되도록 90% delay 적용.. 
             time.sleep(self.act_dur*self.act_delay_factor)
 
             #await asyncio.sleep(2)  
+
 
 
     def req_move_gripper(self, req_joint_pos):
@@ -200,7 +231,7 @@ class CrbsServer(Node):
         self.arm_req_future = self.arm_client.call_async(self.arm_req)
         self.arm_req_future.add_done_callback(self.response_arm_callback)
 
-        self.prev_angle[4] = self.joint_angles[4]
+        self.prev_angles[4] = self.joint_angles[4]
 
 
     # after arm service callback ... 
@@ -212,7 +243,7 @@ class CrbsServer(Node):
     def cal_setp_joint_angle(self, req_joint_pos, act_step, step):
         div_step = act_step - step
         for i in range(0, 5):
-            self.joint_angles[i] = self.prev_angle[i] + (req_joint_pos[i]-self.prev_angle[i])/div_step
+            self.joint_angles[i] = self.prev_angles[i] + (req_joint_pos[i]-self.prev_angles[i])/div_step
 
     # self.twist update 후 cmd_vel 발행 
     def twist_pub(self):
@@ -226,25 +257,13 @@ class CrbsServer(Node):
     def update(self):
         """ self.twist, self.pose, self.color 을 이용한 알고리즘"""
         if self.cmd == "moveto":
-            if self.phase == 0:
-                self.twist.linear.x = 0.0
-                self.twist.angular.z = 2.0
-                if (self.get_clock().now() - self.prev_time) > Duration(seconds=1, nanoseconds=250_000_000):
-                    self.prev_time = self.get_clock().now()
-                    self.phase = 1
-            elif self.phase == 1:
-                self.twist.linear.x = 1.0
-                self.twist.angular.z = 0.0
-                if (self.get_clock().now() - self.prev_time) > Duration(seconds=2):
-                    self.prev_time = self.get_clock().now()
-                    self.phase = 0
-        #elif self.cmd == "arm":
-        #    
+            self.twist.linear.x = 0.0
+            self.twist.angular.z = 2.0
+            if (self.get_clock().now() - self.prev_time) > Duration(seconds=1, nanoseconds=250_000_000):
+                self.prev_time = self.get_clock().now()
 
-def main():
-    rclpy.init()
-    #node2 = crbs_mani.CrbsMani()
-    #node = CrbsServer(node2)
+def main(args=None):
+    rclpy.init(args=args)
     node = CrbsServer()
     
     try:

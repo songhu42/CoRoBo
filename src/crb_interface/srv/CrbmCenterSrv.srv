@@ -1,0 +1,6 @@
+builtin_interfaces/Time stamp
+int32 msn_id
+---
+builtin_interfaces/Time stamp
+bool success
+string message

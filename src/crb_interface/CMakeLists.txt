@@ -18,6 +18,7 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME} 
   "msg/CrbsCmdMsg.msg" 
+  "srv/CrbmCenterSrv.srv"
   "srv/CrbsCmdSrv.srv"
   "srv/CrbsArmSrv.srv"
   "action/Fibonacci.action"

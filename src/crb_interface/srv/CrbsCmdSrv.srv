@@ -3,9 +3,16 @@ string cmd
 float32 x
 float32 y
 float32 z
+float32 w
+float32 act_dur
+int16 act_step
+float32 act_delay_factor 
+
 ---
 builtin_interfaces/Time stamp
+bool success 
 string result
 float32 x
 float32 y
 float32 z
+float32 w

@@ -32,6 +32,17 @@ def select_where(conn, tb_name, whereOption):
     return cursor 
 
 
+def select_sql(conn, sql):
+    global logger 
+    # 커서 생성
+    cursor = conn.cursor()
+
+    # 쿼리 실행
+    sql_query = f"{sql}" 
+    cursor.execute(sql_query)
+
+    return cursor 
+
 def test_db(node_logger=None):
     global logger 
 
@@ -54,6 +65,7 @@ def test_db(node_logger=None):
         log(f"DB Exception !! => {e.__doc__}")
         log(e.__doc__)
         log(e.__traceback__)
+        raise e
 
     finally:
         # 연결과 커서 닫기
