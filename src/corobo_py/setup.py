@@ -32,6 +32,7 @@ setup(
             "crbs_mani = corobo_py.crbs_mani:main",
             "patrol_manipulator = corobo_py.patrol_manipulator:main",
             "teleop_keyboard = corobo_py.teleop_keyboard:main",
+            "corobo_arm_control = corobo_arm_control.corobo_arm_control:main",
             
         ],
     },
