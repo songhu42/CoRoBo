@@ -11,10 +11,12 @@
 ##### ..id : 각자 google id/ pw : lanos 
 ##### ..미션-서비스-파라메터 등록 테스트 해보고, 전체 구조 파악해 보세요.. 
 
+---
 #### .docs/05.참고자료/01.수업내용/ 폴더에 수업내용중 실행 명령에 관한 txt 파일 참고 바람. 
 #### .CoRoBo_commands.txt 는 계속 업데이트할 파일임. 
 
 
+---
 #### * [작업 계획서 공유 시트](https://docs.google.com/spreadsheets/d/1Ax51eHTzGg0aRhSEcF578aqg9tlRLEkP7mvnGKbirCw/edit?usp=sharing)
 #### * [프로젝트 계획 보고서](https://docs.google.com/presentation/d/1ThbLE5Y6Xg9RgLLjTK1_HF7dZU1hlJvQJJSY7Gy3eAw/edit?usp=sharing) 
 
