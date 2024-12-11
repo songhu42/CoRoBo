@@ -1,7 +1,7 @@
 [2024-11-25(월)] 
 ros2 pkg create --build-type ament_python corobo_py
 ros2 pkg create --build-type ament_cmake corobo_cpp
-ros2 pkg create --build-type ament_cmake crb_interface
+ros2 pkg create --build-type ament_cmake 크
 
 -- .bashrc alias 추가 
 -- github에 push 하기전에 전체 pull 먼저 수행해야 함. git add => ga로 실행하여 git pull 이 먼저 실행 되도록 함. 
@@ -31,5 +31,15 @@ DB : corobodb
 ID/PW : corobo/corobo12 
 DB root : root/lanos
 
+alter user 'corobo'@'localhost' identified with mysql_native_password by 'corobo12';
+alter user 'corobo'@'%' identified with mysql_native_password by 'corobo12';
 
 pip install mysql-connector-python
+
+-- [2024-12-11] 내란 9일째 
+-- turtlebot3 > turtlesim package install 
+sudo apt update 
+sudo apt install ros-foxy-turtlesim 
+
+-- server 실행
+ ros2 launch corobo_py server.launch.py
