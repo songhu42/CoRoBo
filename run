@@ -1,0 +1,8 @@
+if [ $# -eq 0 ]
+  then
+        export ROS_DOMAIN_ID=18
+  else
+        export ROS_DOMAIN_ID="$1"
+fi
+echo $ROS_DOMAIN_ID
+ros2 launch corobo_py server.launch.py server_type:=sub

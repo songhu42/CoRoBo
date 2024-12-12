@@ -41,5 +41,35 @@ pip install mysql-connector-python
 sudo apt update 
 sudo apt install ros-foxy-turtlesim 
 
+-- 시동(브링업) 명령어
+ros2 launch turtlebot3_manipulation_bringup hardware.launch.py
+
 -- server 실행
- ros2 launch corobo_py server.launch.py
+./run =>  ros2 launch corobo_py server.launch.py
+
+[crbs_mani-1] ModuleNotFoundError: No module named 'open_manipulator_msgs'
+
+-- [2024-12-11] 내란 10일째 윤석렬 2차 내란 선포 .. 정신병.. 
+-- 로봇 workspace 적용 
+/home/ubuntu/turtlebot3_ws/src/turtlebot3_manipulation/turtlebot3_manipulation_bringup/launch/hardware.launch.py
+=> base.launch.py prefix="ubuntu06/18" 
+-- urdf setting 
+=> /home/ubuntu/turtlebot3_ws/src/turtlebot3_manipulation/turtlebot3_manipulation_description/urdf/turtlebot3_manipulation.urdf.xacro 
+
+-- running Nodes 
+Node( package='robot_state_publisher', executable='robot_state_publisher',parameters=[{'robot_description': urdf_file, 'use_sim_time': use_sim}], output='screen'),
+Node( package='rviz2', executable='rviz2', arguments=['-d', rviz_config_file], output='screen', condition=IfCondition(start_rviz)),
+Node( package='controller_manager', executable='ros2_control_node', parameters=[{'robot_description': urdf_file}, controller_manager_config], 
+Node( package='controller_manager', executable='spawner.py', arguments=['joint_state_broadcaster'], output='screen', ),
+Node( package='controller_manager', executable='spawner.py', arguments=['diff_drive_controller'], output='screen', condition=UnlessCondition(use_sim) ),
+Node( package='controller_manager', executable='spawner.py', arguments=['imu_broadcaster'], output='screen', ),
+Node( package='controller_manager', executable='spawner.py', arguments=['arm_controller'], output='screen', ),
+Node( package='controller_manager', executable='spawner.py', arguments=['gripper_controller'], output='screen',  ),
+
+
+-- 브링업 ubuntu06 /18 
+ros2 launch turtlebot3_manipulation_bringup hardware.launch.py prefix:=ubuntu18_
+
+controller_manager 실행시 참조되는 urdf 
+/home/ubuntu/turtlebot3_ws/src/turtlebot3_manipulation/turtlebot3_manipulation_description/ros2_control/turtlebot3_manipulation_system.ros2_control.xacro
+

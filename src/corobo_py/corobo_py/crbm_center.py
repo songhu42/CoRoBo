@@ -134,7 +134,7 @@ class CrbmCenter(Node):
                 "LEFT OUTER JOIN SRV_MST B ON (A.SRV_ID = B.SRV_ID) "
                 "LEFT OUTER JOIN SRV_INFO C ON (A.SRV_SEQ = C.SRV_SEQ) "
                 f"WHERE A.MSN_ID = {msn_id} ORDER BY A.SORTS ") 
-            self.get_logger().info(f"MSN_NM : {row[0]} MSN_DESC : {row[1]} ")
+            self.get_logger().info(f"SRV_SEQ : {row[0]} MSN_DESC : {row[1]} ")
             cursor = crb_db.select_sql(self.conn, sql)  
 
             self.service_list = [] 
