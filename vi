@@ -1,0 +1,4 @@
+# server_type : main/sub robot run services. 
+ros2 run corobo_py crbs_mani --ros-args -p server_type:=main
+ros2 run corobo_py crbs_server --ros-args -p server_type:=main
+

@@ -33,6 +33,11 @@ class CrbmCenter(Node):
         self.cur_msn_nm = ""
         self.cur_msn_desc = ""
 
+        self.declare_parameter('server_type', 'main')
+        self.server_type = self.get_parameter('server_type').get_parameter_value().string_value
+
+        self.get_logger().info(f"CrbmCenter server_type : {self.server_type}  ")
+
         # 현재 미션 정보 publishing 
         self.create_timer(3, self.update_me)
 

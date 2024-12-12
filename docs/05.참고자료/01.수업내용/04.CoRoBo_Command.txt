@@ -36,6 +36,10 @@ alter user 'corobo'@'%' identified with mysql_native_password by 'corobo12';
 
 pip install mysql-connector-python
 
+-- web server 실행 
+~/tomcat8/bin/run 
+
+
 -- [2024-12-11] 내란 9일째 
 -- turtlebot3 > turtlesim package install 
 sudo apt update 
@@ -66,10 +70,15 @@ Node( package='controller_manager', executable='spawner.py', arguments=['imu_bro
 Node( package='controller_manager', executable='spawner.py', arguments=['arm_controller'], output='screen', ),
 Node( package='controller_manager', executable='spawner.py', arguments=['gripper_controller'], output='screen',  ),
 
-
 -- 브링업 ubuntu06 /18 
 ros2 launch turtlebot3_manipulation_bringup hardware.launch.py prefix:=ubuntu18_
 
 controller_manager 실행시 참조되는 urdf 
 /home/ubuntu/turtlebot3_ws/src/turtlebot3_manipulation/turtlebot3_manipulation_description/ros2_control/turtlebot3_manipulation_system.ros2_control.xacro
 
+=> workspace 구분 실패닷... => ROS_DOMAIN_ID 구분해서 실행되도록 변경.. 
+CoRoBo/run : 리눅스 서버에서 crbm_center실행  2개 창에서 각각  프로세서를 실행하여야 함. 
+ 1 : run main 
+ 2 : run sub 
+CoRoBo/runm : main robot 에서 실행 
+CoRoBo/runs : sub robot 에서 실행 

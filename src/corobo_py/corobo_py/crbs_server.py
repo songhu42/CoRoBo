@@ -22,14 +22,16 @@ import time
 import traceback
 
 class CrbsServer(Node):
-    def __init__(self, server_type): 
+    def __init__(self): 
         self.cmd = None
         self.req = CrbsCmdMsg()
         self.target_pos = Vector3() 
         self.callback_group = ReentrantCallbackGroup()
         super().__init__("crbs_server")
+        self.declare_parameter('server_type', 'main')
+        self.server_type = self.get_parameter('server_type').get_parameter_value().string_value
 
-        self.get_logger().info(f"CrbsServer server_type : {server_type}  ")
+        self.get_logger().info(f"CrbsServer server_type : {self.server_type}  ")
 
         # TODO : read from DB for base position 선자세 각도 기준 
         self.base_angles = [0.0, 0.0, -1.5, 0.0, 0.0]
@@ -265,13 +267,7 @@ class CrbsServer(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    server_type = "main"
-    if args != None:
-        server_type=args[1]
-    print(f"args : {args}")
-        
-    print(f"server type : {server_type}")
-    node = CrbsServer(server_type)
+    node = CrbsServer()
     
     try:
         rclpy.spin(node)
