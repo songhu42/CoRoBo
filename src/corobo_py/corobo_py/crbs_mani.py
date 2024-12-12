@@ -1,5 +1,5 @@
 import rclpy
-from open_manipulator_msgs.srv import SetJointPosition, SetKinematicsPose
+#from open_manipulator_msgs.srv import SetJointPosition, SetKinematicsPose
 from rclpy.clock import Duration
 from rclpy.node import Node
 from rclpy.task import Future
@@ -31,8 +31,8 @@ class CrbsMani(Node):
         while not self.tool_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info("tool_client service not available")
 
-        self.joint_req = SetJointPosition.Request()
-        self.tool_req = SetJointPosition.Request() 
+        #self.joint_req = SetJointPosition.Request()
+        #self.tool_req = SetJointPosition.Request() 
 
         # self.create_timer(1/20, self.update)
         self.joint_angles = [0.0, 0.0, -1.5, 0.0, 0.0] 
