@@ -23,19 +23,19 @@ class CrbsMani(Node):
         self.tool_client = ActionClient(self, GripperCommand, '/gripper_controller/gripper_cmd')
         self.joint_client = ActionClient(self, FollowJointTrajectory, '/arm_controller/follow_joint_trajectory')
 
-        # 팔 초기 위치 (1단계 포지션)
-        self.arm_initial_positions = [0.0, -1.5785, 1.2241, 0.2654]
 
-        while not self.joint_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info("joint_client service not available")
-        while not self.tool_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info("tool_client service not available")
+        # while not self.joint_client.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info("joint_client service not available")
+        # while not self.tool_client.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info("tool_client service not available")
 
         #self.joint_req = SetJointPosition.Request()
         #self.tool_req = SetJointPosition.Request() 
 
         # self.create_timer(1/20, self.update)
-        self.joint_angles = [0.0, 0.0, -1.5, 0.0, 0.0] 
+        # 팔 초기 위치 (1단계 포지션)
+        self.arm_initial_positions = [0.0, -1.5785, 1.2241, 0.2654]
+        self.joint_angles = [0.0, -1.5785, 1.2241, 0.2654]
 
         self.prev_time = self.get_clock().now()
         self.stage = 0
