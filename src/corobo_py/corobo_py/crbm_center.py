@@ -26,25 +26,28 @@ import traceback
 # MSN_ID : 1, 2 : arm_lift, arm_release... 
 
 class CrbmCenter(Node):
-    def __init__(self):
+    def __init__(self, server_type):
         super().__init__("crbm_center")
         self.callback_group = MutuallyExclusiveCallbackGroup()
         self.cur_msn_id = 0
         self.cur_msn_nm = ""
         self.cur_msn_desc = ""
 
-        self.declare_parameter('server_type', 'main')
-        self.server_type = self.get_parameter('server_type').get_parameter_value().string_value
+        self.server_type = server_type 
 
         self.get_logger().info(f"CrbmCenter server_type : {self.server_type}  ")
 
         # 현재 미션 정보 publishing 
         self.create_timer(3, self.update_me)
 
-        self.create_service(CrbmCenterSrv, "crbm_center", self.crbm_callback, callback_group=self.callback_group) 
+        if self.server_type == "main":
+            self.create_service(CrbmCenterSrv, "crbm_center_main", self.crbm_callback, callback_group=self.callback_group) 
+        else :
+            self.create_service(CrbmCenterSrv, "crbm_center_sub", self.crbm_callback, callback_group=self.callback_group) 
         
         # create crbs_mani by called arm 
         self.cmd_client = self.create_client(CrbsCmdSrv, "crbs_m_server") 
+
         while not self.cmd_client.wait_for_service(timeout_sec=10.0):
             self.get_logger().info("service crbs_m_server is not available!!")
 
@@ -74,11 +77,24 @@ class CrbmCenter(Node):
 
                 # add service cmds here ... 
                 if self.cmd_req.cmd == "arm_joint":
+                    # action call로 1번으로 호출하자! 
+                    self.cmd_req.act_dur = service_info.srv_dur/1000
+                    self.cmd_req.act_step = 1
+                    self.cmd_req.act_delay_factor = 0.9
+
                     self.cmd_req.x = float(service_info.get_parm_val("joint1"))
+                    # sub 인 경우 joint1 반대 방향으로 회전 
+                    if self.server_type == "sub":
+                        self.cmd_req.x = -1.0*float(service_info.get_parm_val("joint1"))
+
                     self.cmd_req.y = float(service_info.get_parm_val("joint2"))
                     self.cmd_req.z = float(service_info.get_parm_val("joint3"))
                     self.cmd_req.w = float(service_info.get_parm_val("joint4"))
                 elif self.cmd_req.cmd == "arm_gripper":
+                    # action call로 1번으로 호출하자! 
+                    self.cmd_req.act_dur = service_info.srv_dur/1000
+                    self.cmd_req.act_step = 1
+                    self.cmd_req.act_delay_factor = 0.9
                     self.cmd_req.x = float(service_info.get_parm_val("gripper"))
 
                 # pre delay duration.. 
@@ -200,8 +216,11 @@ class CrbmCenter(Node):
         
 def main(args=None):
     rclpy.init(args=args)
-    # print(f"args {sys.argv[1]}")
-    node = CrbmCenter()
+    server_type="main"
+
+    if len(sys.argv) > 2:
+        server_type=sys.argv[2]
+    node = CrbmCenter(server_type)
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
