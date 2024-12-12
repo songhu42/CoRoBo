@@ -1,3 +1,3 @@
 # server_type : main/sub robot run services. 
-ros2 launch corobo_py crbs_server.launch.py server_type:=sub
+ros2 launch corobo_py server.launch.py server_type:=sub
 
