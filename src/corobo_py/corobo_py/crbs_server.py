@@ -270,8 +270,8 @@ def main(args=None):
 
     server_type="main"
 
-    if len(sys.argv) > 2:
-        server_type=sys.argv[2]
+    if len(sys.argv) > 1:
+        server_type=sys.argv[1]
     node = CrbsServer(server_type)
     
     try:
