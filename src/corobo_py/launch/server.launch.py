@@ -3,10 +3,7 @@ from launch_ros.actions import Node
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 
-server_type = LaunchConfiguration('server_type')
-print(f"LaunchConfiguration server_type : {server_type}")
-
-server_type = "sub"
+server_type = LaunchConfiguration('server_type', default="sub") 
 
 def generate_launch_description():
     return LaunchDescription([
