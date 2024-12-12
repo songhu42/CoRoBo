@@ -1,3 +1,4 @@
+import sys
 import rclpy
 from geometry_msgs.msg import Twist
 from rclpy.duration import Duration
@@ -28,7 +29,7 @@ class CrbsServer(Node):
         self.target_pos = Vector3() 
         self.callback_group = ReentrantCallbackGroup()
         super().__init__("crbs_server") 
-        
+
         self.server_type = server_type
         self.get_logger().info(f"CrbsServer server_type : {self.server_type}  ")
 
