@@ -38,5 +38,5 @@
 ## * Team Members 
 #### .송훈구 (songhu42@gmail.com)
 #### .이주호 (wnghboy@gmail.com)
-#### .원용재 (giraliusr@gmail.com)
-#### .조은성 (yongjaew241@gmail.com)
+#### .원용재 (yongjaew241@gmail.com)
+#### .조은성 (giraliusr@gmail.com)
