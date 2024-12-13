@@ -27,6 +27,7 @@ setup(
         'console_scripts': [
             "action_server = corobo_py.action_server:main",
             "action_client = corobo_py.action_client:main",
+            "crbm_caller = corobo_py.crbm_caller:main",
             "crbm_center = corobo_py.crbm_center:main",
             "crbs_server = corobo_py.crbs_server:main",
             "crbs_mani = corobo_py.crbs_mani:main",

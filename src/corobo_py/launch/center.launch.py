@@ -9,5 +9,5 @@ server_type = LaunchConfiguration('server_type', default="sub")
 
 def generate_launch_description():
     return LaunchDescription([
-        Node(package="corobo_py", executable="crbm_center", arguments=['server_type', server_type])
+        Node(package="corobo_py", executable="crbm_caller", arguments=['server_type', server_type])
         ])

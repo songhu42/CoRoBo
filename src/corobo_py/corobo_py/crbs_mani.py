@@ -19,23 +19,23 @@ class CrbsMani(Node):
 
         # 2. 로봇 제어를 위한 액션 클라이언트 초기화
         #self.joint_client = self.create_client(SetJointPosition, 'goal_joint_space_path')
-        #self.tool_client = self.create_client(SetJointPosition, 'goal_tool_control')
-        self.tool_client = ActionClient(self, GripperCommand, '/gripper_controller/gripper_cmd')
+        #self.gripper_client = self.create_client(SetJointPosition, 'goal_gripper_control')
+        self.gripper_client = ActionClient(self, GripperCommand, '/gripper_controller/gripper_cmd')
         self.joint_client = ActionClient(self, FollowJointTrajectory, '/arm_controller/follow_joint_trajectory')
 
 
         # while not self.joint_client.wait_for_service(timeout_sec=1.0):
         #     self.get_logger().info("joint_client service not available")
-        # while not self.tool_client.wait_for_service(timeout_sec=1.0):
-        #     self.get_logger().info("tool_client service not available")
+        # while not self.gripper_client.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info("gripper_client service not available")
 
         #self.joint_req = SetJointPosition.Request()
-        #self.tool_req = SetJointPosition.Request() 
+        #self.gripper_req = SetJointPosition.Request() 
 
         # self.create_timer(1/20, self.update)
         # 팔 초기 위치 (1단계 포지션)
-        self.arm_initial_positions = [0.0, -1.5785, 1.2241, 0.2654]
-        self.joint_angles = [0.0, -1.5785, 1.2241, 0.2654]
+        self.arm_initial_positions = [0.0, -1.5785, 1.2241, 0.2654, 0.0]
+        self.joint_angles = [0.0, -1.5785, 1.2241, 0.2654, 0.0]
 
         self.prev_time = self.get_clock().now()
         self.stage = 0
@@ -52,17 +52,17 @@ class CrbsMani(Node):
 
         if request.is_gripper:
             response.message = "gripper moving service completed"
-            self.send_tool_request(request.path_time)
+            self.send_gripper_request(int(request.path_time))
         else:
             response.message = "joint moving service completed"
-            self.send_joint_request(request.path_time)
+            self.send_joint_request(int(request.path_time))
 
         response.success = True
 
         return response
         
 
-    def send_joint_request(self, time_from_start_sec=0.5, path_time=0.5):
+    def send_joint_request(self, time_from_start_sec=1, path_time=0.5):
         # self.joint_req.joint_position.joint_name = ['joint1', 'joint2', 'joint3', 'joint4']
         # self.joint_req.joint_position.position = [self.joint_angles[0], self.joint_angles[1], self.joint_angles[2], self.joint_angles[3]]
         # #self.joint_req.joint_position.position = self.joint_angles
@@ -82,7 +82,7 @@ class CrbsMani(Node):
         trajectory_msg = JointTrajectory()
         trajectory_msg.joint_names = ['joint1', 'joint2', 'joint3', 'joint4']
         point = JointTrajectoryPoint()
-        point.positions = self.joint_angles
+        point.positions = [self.joint_angles[0], self.joint_angles[1], self.joint_angles[2], self.joint_angles[3]]
         point.time_from_start.sec = time_from_start_sec
         trajectory_msg.points = [point]
 
@@ -91,20 +91,20 @@ class CrbsMani(Node):
         goal_msg.trajectory = trajectory_msg
 
         # 목표 전송
-        self.arm_client.wait_for_server()
+        self.joint_client.wait_for_server()
         self.get_logger().info("팔 명령이 성공적으로 전송되었습니다.")
-        self.arm_client.send_goal_async(goal_msg)        
+        self.joint_client.send_goal_async(goal_msg)        
 
-    def send_tool_request(self, path_time=0.5):
+    def send_gripper_request(self, path_time=0.5):
         self.send_gripper_command(self.joint_angles[4])
-        # self.tool_req.joint_position.joint_name = ['joint1', 'joint2', 'joint3', 'joint4', 'gripper']
-        # self.tool_req.joint_position.position = [self.joint_angles[0], self.joint_angles[1], self.joint_angles[2], self.joint_angles[3], self.joint_angles[4]]
-        # self.tool_req.path_time = path_time
+        # self.gripper_req.joint_position.joint_name = ['joint1', 'joint2', 'joint3', 'joint4', 'gripper']
+        # self.gripper_req.joint_position.position = [self.joint_angles[0], self.joint_angles[1], self.joint_angles[2], self.joint_angles[3], self.joint_angles[4]]
+        # self.gripper_req.path_time = path_time
 
         # try:
-        #     self.tool_future = self.tool_client.call_async(self.tool_req)
-        #     self.tool_future.add_done_callback(self.done_tool_callback)
-        #     self.get_logger().info(f"send_tool_request : {self.joint_angles}")
+        #     self.gripper_future = self.gripper_client.call_async(self.gripper_req)
+        #     self.gripper_future.add_done_callback(self.done_gripper_callback)
+        #     self.get_logger().info(f"send_gripper_request : {self.joint_angles}")
         # except Exception as e:
         #     self.get_logger().info('Tool control failed %r' % (e,))
 
@@ -122,13 +122,13 @@ class CrbsMani(Node):
         self.get_logger().info("그립퍼 명령이 성공적으로 전송되었습니다.")
         self.gripper_client.send_goal_async(goal_msg)
 
-    def done_joint_callback(self, future : Future):
-        response : SetJointPosition.Response = future.result()
-        self.get_logger().info(f"done_joint_callback : {response.is_planned}")
+    # def done_joint_callback(self, future : Future):
+    #     response : SetJointPosition.Response = future.result()
+    #     self.get_logger().info(f"done_joint_callback : {response.is_planned}")
 
-    def done_tool_callback(self, future : Future):
-        response : SetJointPosition.Response = future.result()
-        self.get_logger().info(f"done_tool_callback : {response.is_planned}")
+    # def done_gripper_callback(self, future : Future):
+    #     response : SetJointPosition.Response = future.result()
+    #     self.get_logger().info(f"done_gripper_callback : {response.is_planned}")
 
 def main():
     rclpy.init()

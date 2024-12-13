@@ -193,7 +193,8 @@ class CrbsServer(Node):
 
     def req_move_joint(self, req_joint_pos):
         # rate = self.create_rate(1.0/act_dur)
-        self.get_logger().info(f"req_move_joint called {req_joint_pos} step : {self.act_dur}")
+        self.get_logger().info(f"req_move_joint called {req_joint_pos} step : {self.act_step} dur : {self.act_dur}")
+        
         for step in range(0, self.act_step): 
             # calculate self.joint_anges step by step .... 
             self.cal_setp_joint_angle(req_joint_pos, self.act_step, step)
@@ -220,7 +221,7 @@ class CrbsServer(Node):
 
     def req_move_gripper(self, req_joint_pos):
         # rate = self.create_rate(1.0/act_dur)
-        self.get_logger().info(f"req_move_joint called {req_joint_pos} step : {self.act_dur}")
+        self.get_logger().info(f"req_move_gripper called : {req_joint_pos} step : {self.act_step} dur : {self.act_dur}")
         self.joint_angles[4] = req_joint_pos[4]
         self.arm_req.is_gripper = True
         self.arm_req.joint1 = 0.0
@@ -272,7 +273,7 @@ def main(args=None):
 
     if len(sys.argv) > 2:
         server_type=sys.argv[2]
-        
+
     node = CrbsServer(server_type)
     
     try:

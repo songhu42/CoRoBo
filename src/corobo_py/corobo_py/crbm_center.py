@@ -38,7 +38,7 @@ class CrbmCenter(Node):
         self.get_logger().info(f"CrbmCenter server_type : {self.server_type}  ")
 
         # 현재 미션 정보 publishing 
-        self.create_timer(3, self.update_me)
+        #self.create_timer(3, self.update_me)
 
         if self.server_type == "main":
             self.create_service(CrbmCenterSrv, "crbm_center_main", self.crbm_callback, callback_group=self.callback_group) 
@@ -106,7 +106,7 @@ class CrbmCenter(Node):
                 self.cmd_req_future.add_done_callback(self.response_cmd_callback)
 
                 # TODO : Check delay is necessary... 
-                #time.sleep(service_info.srv_dur/1000.0)
+                time.sleep(service_info.srv_dur/1000.0)
 
                 if service_info.aft_dur > 0 :
                     time.sleep(service_info.aft_dur/1000.0)
@@ -150,8 +150,8 @@ class CrbmCenter(Node):
             cursor.close()
 
             # 서비스정보 가져오기
-            sql = ("SELECT A.SRV_SEQ, A.SRV_ID, B.SRV_NM, C.SRV_DESC, C.SRV_CALL, C.SRV_DUR, C.PRE_DUR, C.AFT_DUR, "
-                "C.MAP_TP  FROM MSN_SRV_INFO A "
+            sql = ("SELECT A.SRV_SEQ, A.SRV_ID, B.SRV_NM, C.SRV_DETAIL, C.SRV_CALL, C.SRV_DUR, C.PRE_DUR, C.AFT_DUR "
+                " FROM MSN_SRV_INFO A "
                 "LEFT OUTER JOIN SRV_MST B ON (A.SRV_ID = B.SRV_ID) "
                 "LEFT OUTER JOIN SRV_INFO C ON (A.SRV_SEQ = C.SRV_SEQ) "
                 f"WHERE A.MSN_ID = {msn_id} ORDER BY A.SORTS ") 
@@ -171,7 +171,6 @@ class CrbmCenter(Node):
                 svr_info.srv_dur = row[5]
                 svr_info.pre_dur = row[6]
                 svr_info.aft_dur = row[7]
-                svr_info.map_tp = row[8]
 
                 self.service_list.append(svr_info)
 
@@ -180,19 +179,18 @@ class CrbmCenter(Node):
             # 파라메터 정보 가져오기
             for svr in self.service_list:
                     
-                sql = ("SELECT A.PARM_ID, A.PARM_DESC, A.PARM_VAL FROM PARM_INFO A "
+                sql = ("SELECT A.PARM_ID, A.PARM_VAL FROM PARM_INFO A "
                     f"WHERE A.SRV_SEQ = {svr.srv_seq} ORDER BY A.SORTS ") 
                 cursor = crb_db.select_sql(self.conn, sql)  
 
                 svr.parm = [] 
                 result = cursor.fetchall()
                 for row in result:
-                    self.get_logger().info(f"parm_id : {row[0]} parm_val : {row[2]} ")
+                    self.get_logger().info(f"parm_id : {row[0]} parm_val : {row[1]} ")
                     parm_info = ParmDao()
                     parm_info.srv_seq = svr.srv_seq
                     parm_info.parm_id = row[0]
-                    parm_info.parm_desc = row[1]
-                    parm_info.parm_val = row[2] 
+                    parm_info.parm_val = row[1] 
 
                     svr.parm.append(parm_info)
 
