@@ -25,10 +25,7 @@ class CrbmCaller(Node):
         # 현재 미션 정보 publishing 
         #self.create_timer(3, self.update_me)
 
-        if self.server_type == "main":
-            self.create_service(CrbmCenterSrv, "crbm_caller_main", self.crbm_caller_callback, callback_group=self.callback_group) 
-        else :
-            self.create_service(CrbmCenterSrv, "crbm_caller_sub", self.crbm_caller_callback, callback_group=self.callback_group) 
+        self.create_service(CrbmCenterSrv, "crbm_caller", self.crbm_caller_callback, callback_group=self.callback_group) 
         
         # create crbs_mani by called arm 
         self.cmd_client = self.create_client(CrbmCenterSrv, "crbm_center") 

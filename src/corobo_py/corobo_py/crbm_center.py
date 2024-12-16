@@ -40,10 +40,7 @@ class CrbmCenter(Node):
         # 현재 미션 정보 publishing 
         #self.create_timer(3, self.update_me)
 
-        if self.server_type == "main":
-            self.create_service(CrbmCenterSrv, "crbm_center_main", self.crbm_callback, callback_group=self.callback_group) 
-        else :
-            self.create_service(CrbmCenterSrv, "crbm_center_sub", self.crbm_callback, callback_group=self.callback_group) 
+        self.create_service(CrbmCenterSrv, "crbm_center", self.crbm_callback, callback_group=self.callback_group) 
         
         # create crbs_mani by called arm 
         self.cmd_client = self.create_client(CrbsCmdSrv, "crbs_m_server") 
@@ -96,6 +93,16 @@ class CrbmCenter(Node):
                     self.cmd_req.act_step = 1
                     self.cmd_req.act_delay_factor = 0.9
                     self.cmd_req.x = float(service_info.get_parm_val("gripper"))
+
+                elif self.cmd_req.cmd == "robo_moveto":
+                    # action call로 1번으로 호출하자! 
+                    self.cmd_req.act_dur = service_info.srv_dur/1000
+                    self.cmd_req.act_step = 1
+                    self.cmd_req.act_delay_factor = 0.9
+                    self.cmd_req.x = float(service_info.get_parm_val("x"))
+                    self.cmd_req.y = float(service_info.get_parm_val("y"))
+                    self.cmd_req.z = float(service_info.get_parm_val("z"))
+                    self.get_logger().info(f"robo_moveto request to crbs_server x: {self.cmd_req.x} y: {self.cmd_req.y} z: {self.cmd_req.z}")
 
                 # pre delay duration.. 
                 if service_info.pre_dur > 0 :

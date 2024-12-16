@@ -1,5 +1,6 @@
 import sys
 import rclpy
+import math 
 from geometry_msgs.msg import Twist
 from rclpy.duration import Duration
 from rclpy.node import Node
@@ -9,6 +10,11 @@ from rclpy.qos import (
     QoSProfile,
     QoSReliabilityPolicy,
 )
+import tf2_ros
+import tf_transformations
+from geometry_msgs.msg import Pose, TransformStamped, Twist
+from nav_msgs.msg import Odometry
+
 from turtlesim.msg import Color, Pose
 import corobo_py.crb_db as crb_db 
 from crb_interface.srv import CrbsCmdSrv
@@ -21,6 +27,13 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 # from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 import time 
 import traceback
+from rclpy.qos import qos_profile_sensor_data
+from ros2_aruco_interfaces.msg import ArucoMarkers
+from sensor_msgs.msg import BatteryState, Imu, LaserScan
+from tf2_ros import Buffer, TransformBroadcaster, TransformListener, Time
+
+MAX_VEL = 0.21
+MAX_ANGLE = 2.8 # radian/sec
 
 class CrbsServer(Node):
     def __init__(self, server_type): 
@@ -30,6 +43,7 @@ class CrbsServer(Node):
         self.callback_group = ReentrantCallbackGroup()
         super().__init__("crbs_server") 
 
+        self.qos_profile = qos_profile_sensor_data
         self.server_type = server_type
         self.get_logger().info(f"CrbsServer server_type : {self.server_type}  ")
 
@@ -38,14 +52,12 @@ class CrbsServer(Node):
         self.joint_angles = [0.0, 0.0, -1.5, 0.0, 0.0]
         self.prev_angles = [0.0, 0.0, 0.0, 0.0, 0.0]
 
-        self.qos_profile = QoSProfile(history=QoSHistoryPolicy.KEEP_LAST,
-                                      reliability=QoSReliabilityPolicy.RELIABLE,
-                                      durability=QoSDurabilityPolicy.VOLATILE,
-                                      depth=10)
         # set slow for test .. 0.1 => 1.0, 1/20 => 0.1 
-        self.create_timer(1.0, self.twist_pub)
-        # self.create_timer(0.1, self.update)
-        
+        self.create_timer(0.2, self.twist_pub)
+        self.create_timer(0.1, self.update)
+        #self.create_timer(0.1, self.twist_pub)
+        #self.create_timer(1/60, self.update)
+
         self.create_service(CrbsCmdSrv, "crbs_m_server", self.crbs_cmd_callback, callback_group=self.callback_group) 
 
         # create crbs_mani by called arm 
@@ -57,9 +69,19 @@ class CrbsServer(Node):
 
         self.pub = self.create_publisher(Twist, "cmd_vel", self.qos_profile)
         self.create_subscription(Pose, "pose", self.pose_callback, self.qos_profile)
-
+        self.create_subscription(ArucoMarkers, "/aruco_markers", self.aruco_callback, 10)
+        self.create_subscription(Odometry, "/odom", self.odom_callback, 10) 
+        
+        self.aruco_markers = ArucoMarkers()
         self.twist = Twist()
         self.pose = Pose()
+        self.follow_tf = Pose()
+        self.follow_tf2 = TransformStamped()
+        self.theta = 0.0 # raian
+        self.phase = 0
+        self.laserscan_degree = [3.5 for i in range(360)]
+        self.find_wall = False
+        self.tf_broadcaster = TransformBroadcaster(self)
 
         self.prev_time = self.get_clock().now()
 
@@ -78,27 +100,19 @@ class CrbsServer(Node):
         self.req = request
         self.cmd = self.req.cmd
 
-        try:
-                
+        try:                
             # 요청 데이터 가공이 필요한 경우 수행한다. 
-            # TODO:정해진 목표점으로 이동한다. 목표점에 tf 발행 후 tf를 향한 이동 구현 
-            if self.cmd == "moveto":
-                self.target_pos.x = self.req.x
-                self.target_pos.y = self.req.y
-                
-                response.result = "Success"
-                response.x = 0.0
-                response.y = 0.0
-                response.z = 0.0
             # 단순히 지정된 방향/속도로 이동한다. 
-            elif self.cmd == "move":
+            if self.cmd == "move":
                 self.target_pos.x = self.req.x
                 self.target_pos.y = self.req.y
+                self.target_pos.z = self.req.z # 목적지 theta 
                 
                 response.result = "Success"
                 response.x = 0.0
                 response.y = 0.0
                 response.z = 0.0
+
             # TODO:정해진 목표점으로 이동한다. 목표점에 tf 발행 후 tf를 향한 이동 구현 
             elif self.cmd == "armto":
                 self.target_pos.x = self.req.x
@@ -160,6 +174,35 @@ class CrbsServer(Node):
 
                 response.success = True 
                 response.result = "Success req_move_joint"
+                response.x = self.prev_angles[4]
+                response.y = 0.0
+                response.z = 0.0
+                response.w = 0.0
+
+            # TODO:정해진 목표점으로 이동한다. 목표점에 tf 발행 후 tf를 향한 이동 구현 
+            elif self.cmd == "robo_moveto":
+                # set parameter from req  
+                self.act_dur = self.req.act_dur 
+                self.act_step = self.req.act_step 
+                self.act_delay_factor = self.req.act_delay_factor  
+
+                self.target_pos.x = self.req.x
+                self.target_pos.y = self.req.y
+                self.target_pos.z = self.req.z
+
+                self.follow_tf.position.x = self.req.x 
+                self.follow_tf.position.y = self.req.y 
+                self.follow_tf.position.z = self.twist.linear.z 
+                self.follow_tf.orientation.x = self.twist.angular.x 
+                self.follow_tf.orientation.z = self.twist.angular.y 
+                self.follow_tf.orientation.z = self.req.z
+                self.follow_tf.orientation.w = self.twist.angular.w 
+                
+                # 목적지 tf 발행.. 
+                self.aruco_tf_publish_function()
+
+                response.success = True 
+                response.result = "Success robo_moveto"
                 response.x = self.prev_angles[4]
                 response.y = 0.0
                 response.z = 0.0
@@ -249,10 +292,43 @@ class CrbsServer(Node):
         for i in range(0, 5):
             self.joint_angles[i] = self.prev_angles[i] + (req_joint_pos[i]-self.prev_angles[i])/div_step
 
+    def odom_callback(self, msg: Odometry):
+        self.odom = msg
+        x = msg.pose.pose.orientation.x
+        y = msg.pose.pose.orientation.y
+        z = msg.pose.pose.orientation.z
+        w = msg.pose.pose.orientation.w
+        _, _, self.theta = tf_transformations.euler_from_quaternion((x, y, z, w))
+
+    
+
     # self.twist update 후 cmd_vel 발행 
     def twist_pub(self):
+        self.restrain()
         self.pub.publish(self.twist)
-        # self.get_logger().info(f"twist_pub published...")
+
+    def aruco_callback(self, msg: ArucoMarkers):
+        self.aruco_markers = msg
+        for marker_id_ele in msg.marker_ids:
+            if marker_id_ele == 1:
+                self.follow_tf = msg.poses[msg.marker_ids.index(marker_id_ele)]
+        self.aruco_tf_publish_function()
+
+    def aruco_tf_publish_function(self):
+        # TODO : follow_tf 획득 여부 체크 필요.. 
+        # tf2로 구현
+        t = TransformStamped()
+        t.header.stamp = self.get_clock().now().to_msg()
+        t.header.frame_id = "camera_link_optical"
+        t.child_frame_id = "follow_point"
+        t.transform.translation.x = self.follow_tf.position.x
+        t.transform.translation.y = self.follow_tf.position.y
+        t.transform.translation.z = self.follow_tf.position.z
+        t.transform.rotation.x = self.follow_tf.orientation.x
+        t.transform.rotation.y = self.follow_tf.orientation.y
+        t.transform.rotation.z = self.follow_tf.orientation.z
+        t.transform.rotation.w = self.follow_tf.orientation.w
+        self.tf_broadcaster.sendTransform(t)
 
     def pose_callback(self, msg: Pose):
         self.pose = msg
@@ -260,7 +336,28 @@ class CrbsServer(Node):
 
     def update(self):
         """ self.twist, self.pose, self.color 을 이용한 알고리즘"""
-        if self.cmd == "moveto":
+        if self.cmd == "robo_moveto":
+            buffer = Buffer()
+            self.tf_listener = TransformListener(buffer, self)
+            try:
+                self.follow_tf2 = buffer.lookup_transform("camera_link", "follow_point", Time())
+                self.get_logger().info(f"follow_tf : {self.follow_tf2}")
+                self.twist.angular.z = math.atan2(
+                    self.follow_tf2.transform.translation.y,
+                    self.follow_tf2.transform.translation.x)
+                self.twist.linear.x = math.sqrt(
+                    self.follow_tf2.transform.translation.x**2 +
+                    self.follow_tf2.transform.translation.y**2)
+            except Exception as e:
+                self.get_logger().info(f"Exception : {e}")
+                self.twist.angular.z = math.atan2(
+                    self.follow_tf2.transform.translation.y,
+                    self.follow_tf2.transform.translation.x)
+                self.twist.linear.x = math.sqrt(
+                    self.follow_tf2.transform.translation.x**2 +
+                    self.follow_tf2.transform.translation.y**2)
+                
+        elif self.cmd == "move":
             self.twist.linear.x = 0.0
             self.twist.angular.z = 2.0
             if (self.get_clock().now() - self.prev_time) > Duration(seconds=1, nanoseconds=250_000_000):

@@ -77,8 +77,8 @@ controller_manager 실행시 참조되는 urdf
 /home/ubuntu/turtlebot3_ws/src/turtlebot3_manipulation/turtlebot3_manipulation_description/ros2_control/turtlebot3_manipulation_system.ros2_control.xacro
 
 => workspace 구분 실패닷... => ROS_DOMAIN_ID 구분해서 실행되도록 변경.. 
-CoRoBo/run : 리눅스 서버에서 crbm_center실행  2개 창에서 각각  프로세서를 실행하여야 함. 
- 1 : run main 
- 2 : run sub 
+미션 실행 : CoRoBo/ : 리눅스 서버에서 crbm_caller실행  2개 창에서 각각  프로세서를 실행하여야 함. 
+ 1 : run main : run_msn_main.sh {ROS_DOMAIN_ID} {MSN_ID} => ex> run_msn_main.sh 18 8  
+ 2 : run sub : run_msn_sub.sh {ROS_DOMAIN_ID} {MSN_ID} {MSN_ID_SUB} => ex> run_msn_main.sh 18 8 9 => 9 실행됨.   
 CoRoBo/runm : main robot 에서 실행 
 CoRoBo/runs : sub robot 에서 실행 
