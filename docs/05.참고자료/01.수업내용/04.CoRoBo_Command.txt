@@ -82,3 +82,8 @@ controller_manager 실행시 참조되는 urdf
  2 : run sub : run_msn_sub.sh {ROS_DOMAIN_ID} {MSN_ID} {MSN_ID_SUB} => ex> run_msn_main.sh 18 8 9 => 9 실행됨.   
 CoRoBo/runm : main robot 에서 실행 
 CoRoBo/runs : sub robot 에서 실행 
+
+
+-- tf 발행 및 이동 구현 .. 
+sudo apt-get install ros-foxy-tf-transformations
+sudo pip3 install transforms3d

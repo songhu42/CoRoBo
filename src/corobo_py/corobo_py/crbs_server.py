@@ -301,6 +301,11 @@ class CrbsServer(Node):
         _, _, self.theta = tf_transformations.euler_from_quaternion((x, y, z, w))
 
     
+    def restrain(self):
+        self.twist.linear.x = min([self.twist.linear.x , MAX_VEL])
+        self.twist.linear.x = max([self.twist.linear.x , -MAX_VEL])
+        self.twist.angular.z = min([self.twist.angular.z , MAX_ANGLE])
+        self.twist.angular.z = max([self.twist.angular.z , -MAX_ANGLE])
 
     # self.twist update 후 cmd_vel 발행 
     def twist_pub(self):
