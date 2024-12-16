@@ -12,7 +12,7 @@ from rclpy.qos import (
 )
 import tf2_ros
 import tf_transformations
-from geometry_msgs.msg import Pose, TransformStamped, Twist
+from geometry_msgs.msg import Pose, TransformStamped, Twist, Point, Quaternion
 from nav_msgs.msg import Odometry
 
 from turtlesim.msg import Color, Pose
@@ -190,14 +190,15 @@ class CrbsServer(Node):
                 self.target_pos.y = self.req.y
                 self.target_pos.z = self.req.z
 
-                self.follow_tf.position.x = self.req.x 
-                self.follow_tf.position.y = self.req.y 
-                self.follow_tf.position.z = self.twist.linear.z 
-                self.follow_tf.orientation.x = self.twist.angular.x 
-                self.follow_tf.orientation.z = self.twist.angular.y 
-                self.follow_tf.orientation.z = self.req.z
-                self.follow_tf.orientation.w = self.twist.angular.w 
+                # self.follow_tf.position.x = self.req.x 
+                # self.follow_tf.position.y = self.req.y 
+                # self.follow_tf.position.z = self.twist.linear.z 
+                # self.follow_tf.orientation.x = self.twist.angular.x 
+                # self.follow_tf.orientation.z = self.twist.angular.y 
+                # self.follow_tf.orientation.z = self.req.z
+                # self.follow_tf.orientation.w = self.twist.angular.w 
                 
+                self.follow_tf = self.set_pose(px=self.req.x, py=self.req.y, qz=self.req.z )
                 # 목적지 tf 발행.. 
                 self.aruco_tf_publish_function()
 
@@ -233,6 +234,27 @@ class CrbsServer(Node):
         for i in range(5):
             self.prev_angles[i] = angles[i]
 
+    # Pose can't modify... 
+    def update_pose(self, pose, **kwargs):
+        new_pose = Pose(position = Point(
+                                    x=pose['position'].x + kwargs.get('px', 0),
+                                    y=pose['position'].y + kwargs.get('py', 0),
+                                    z=pose['position'].z + kwargs.get('pz', 0)),
+                        orientation = Quaternion(
+                                    x=pose['orientation'].x + kwargs.get('qx', 0),
+                                    y=pose['orientation'].y + kwargs.get('qy', 0),
+                                    z=pose['orientation'].z + kwargs.get('qz', 0),
+                                    w=pose['orientation'].w + kwargs.get('qw', 0)))
+        return new_pose
+    
+    def set_pose(self, **kwargs):
+        new_pose = Pose(position = Point(x=kwargs.get('px', 0), y=kwargs.get('py', 0), z=kwargs.get('pz', 0)),
+                        orientation = Quaternion(
+                                    x=kwargs.get('qx', 0),
+                                    y=kwargs.get('qy', 0),
+                                    z=kwargs.get('qz', 0),
+                                    w=kwargs.get('qw', 0)))
+        return new_pose
 
     def req_move_joint(self, req_joint_pos):
         # rate = self.create_rate(1.0/act_dur)
