@@ -104,6 +104,16 @@ class CrbmCenter(Node):
                     self.cmd_req.z = float(service_info.get_parm_val("z"))
                     self.get_logger().info(f"robo_moveto request to crbs_server x: {self.cmd_req.x} y: {self.cmd_req.y} z: {self.cmd_req.z}")
 
+                elif self.cmd_req.cmd == "robo_movedur":
+                    # action call로 1번으로 호출하자! 
+                    self.cmd_req.act_dur = service_info.srv_dur/1000
+                    self.cmd_req.act_step = 1
+                    self.cmd_req.act_delay_factor = 0.9
+                    self.cmd_req.x = float(service_info.get_parm_val("vel"))
+                    self.cmd_req.y = float(service_info.get_parm_val("rot"))
+                    self.cmd_req.z = float(service_info.get_parm_val("dur"))
+                    self.get_logger().info(f"robo_movedur request to crbs_server vel: {self.cmd_req.x} rot: {self.cmd_req.y} dur: {self.cmd_req.z}")
+
                 # pre delay duration.. 
                 if service_info.pre_dur > 0 :
                     time.sleep(service_info.pre_dur/1000.0)

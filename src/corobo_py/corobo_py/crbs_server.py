@@ -1,7 +1,6 @@
 import sys
 import rclpy
 import math 
-from geometry_msgs.msg import Twist
 from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.qos import (
@@ -12,10 +11,9 @@ from rclpy.qos import (
 )
 import tf2_ros
 import tf_transformations
-from geometry_msgs.msg import Pose, TransformStamped, Twist, Point, Quaternion
+from geometry_msgs.msg import Twist, Pose, TransformStamped, Twist, Point, Quaternion
 from nav_msgs.msg import Odometry
 
-from turtlesim.msg import Color, Pose
 import corobo_py.crb_db as crb_db 
 from crb_interface.srv import CrbsCmdSrv
 from crb_interface.srv import CrbsArmSrv
@@ -84,6 +82,7 @@ class CrbsServer(Node):
         self.tf_broadcaster = TransformBroadcaster(self)
 
         self.prev_time = self.get_clock().now()
+        self.count = 0 # for logging .. 
 
         # reading from request .. 
         self.act_dur = 0.5
@@ -181,6 +180,7 @@ class CrbsServer(Node):
 
             # TODO:정해진 목표점으로 이동한다. 목표점에 tf 발행 후 tf를 향한 이동 구현 
             elif self.cmd == "robo_moveto":
+                self.count = 0
                 # set parameter from req  
                 self.act_dur = self.req.act_dur 
                 self.act_step = self.req.act_step 
@@ -201,6 +201,21 @@ class CrbsServer(Node):
                 self.follow_tf = self.set_pose(px=self.req.x, py=self.req.y, qz=self.req.z )
                 # 목적지 tf 발행.. 
                 self.aruco_tf_publish_function()
+
+            # 정해진 속도/각도/시간으로 이동한다.  
+            elif self.cmd == "robo_movedur":
+                self.count = 0
+                
+                # set parameter from req  
+                self.act_dur = self.req.act_dur 
+                self.act_step = self.req.act_step 
+                self.act_delay_factor = self.req.act_delay_factor  
+
+                self.target_pos.x = self.req.x #속도 
+                self.target_pos.y = self.req.y #각도
+                self.target_pos.z = self.req.z #시간(s)
+
+                self.prev_time = self.get_clock().now()
 
                 response.success = True 
                 response.result = "Success robo_moveto"
@@ -237,23 +252,27 @@ class CrbsServer(Node):
     # Pose can't modify... 
     def update_pose(self, pose, **kwargs):
         new_pose = Pose(position = Point(
-                                    x=pose['position'].x + kwargs.get('px', 0),
-                                    y=pose['position'].y + kwargs.get('py', 0),
-                                    z=pose['position'].z + kwargs.get('pz', 0)),
+                                    x=pose['position'].x + kwargs.get('px', 0.0),
+                                    y=pose['position'].y + kwargs.get('py', 0.0),
+                                    z=pose['position'].z + kwargs.get('pz', 0.0)),
                         orientation = Quaternion(
-                                    x=pose['orientation'].x + kwargs.get('qx', 0),
-                                    y=pose['orientation'].y + kwargs.get('qy', 0),
-                                    z=pose['orientation'].z + kwargs.get('qz', 0),
-                                    w=pose['orientation'].w + kwargs.get('qw', 0)))
+                                    x=pose['orientation'].x + kwargs.get('qx', 0.0),
+                                    y=pose['orientation'].y + kwargs.get('qy', 0.0),
+                                    z=pose['orientation'].z + kwargs.get('qz', 0.0),
+                                    w=pose['orientation'].w + kwargs.get('qw', 0.0)))
+        
+        self.get_logger().info(f"update_pose pose : {new_pose}")
         return new_pose
     
     def set_pose(self, **kwargs):
-        new_pose = Pose(position = Point(x=kwargs.get('px', 0), y=kwargs.get('py', 0), z=kwargs.get('pz', 0)),
+        new_pose = Pose(position = Point(x=kwargs.get('px', 0.0), y=kwargs.get('py', 0.0), z=kwargs.get('pz', 0.0)),
                         orientation = Quaternion(
-                                    x=kwargs.get('qx', 0),
-                                    y=kwargs.get('qy', 0),
-                                    z=kwargs.get('qz', 0),
-                                    w=kwargs.get('qw', 0)))
+                                    x=kwargs.get('qx', 0.0),
+                                    y=kwargs.get('qy', 0.0),
+                                    z=kwargs.get('qz', 0.0),
+                                    w=kwargs.get('qw', 0.0)))
+
+        self.get_logger().info(f"set_pose pose : {new_pose}")
         return new_pose
 
     def req_move_joint(self, req_joint_pos):
@@ -346,7 +365,9 @@ class CrbsServer(Node):
         # tf2로 구현
         t = TransformStamped()
         t.header.stamp = self.get_clock().now().to_msg()
-        t.header.frame_id = "camera_link_optical"
+        #t.header.frame_id = "camera_link_optical"
+        #t.header.frame_id = "camera_rgb_optical_frame"
+        t.header.frame_id = "base_link"
         t.child_frame_id = "follow_point"
         t.transform.translation.x = self.follow_tf.position.x
         t.transform.translation.y = self.follow_tf.position.y
@@ -359,16 +380,48 @@ class CrbsServer(Node):
 
     def pose_callback(self, msg: Pose):
         self.pose = msg
-        self.get_logger().info(f"twpose_callback called...")
+        self.count += 1
+        if self.count > 100 :
+            self.get_logger().info(f"pose_callback x : {self.pose.position.x} y : {self.pose.position.y} z : {self.pose.orientation.z}")
+            self.count = 0
 
     def update(self):
         """ self.twist, self.pose, self.color 을 이용한 알고리즘"""
-        if self.cmd == "robo_moveto":
+        if self.cmd == "robo_movedur":
+            is_log = False
+
+            self.count += 1
+            if self.count > 100 :
+                self.get_logger().info(f"robo_movedur x : {self.target_pos.x} theta : {self.target_pos.y} dur : {self.target_pos.z}")
+                self.count = 0
+                is_log = True          
+
+            nanosec = (self.target_pos.z - int(self.target_pos.z)) * 1000000000
+            dur = Duration(seconds=int(self.target_pos.z), nanoseconds=nanosec)
+            if (self.get_clock().now() - self.prev_time) > dur:
+                self.twist.linear.x = 0.0
+                self.twist.angular.z = 0.0
+            else :
+                self.twist.linear.x = self.target_pos.x
+                self.twist.angular.z = self.target_pos.y 
+
+        elif self.cmd == "robo_moveto":
             buffer = Buffer()
             self.tf_listener = TransformListener(buffer, self)
+            is_log = False
+
             try:
-                self.follow_tf2 = buffer.lookup_transform("camera_link", "follow_point", Time())
-                self.get_logger().info(f"follow_tf : {self.follow_tf2}")
+                #self.follow_tf2 = buffer.lookup_transform("camera_link", "follow_point", Time())
+                #self.follow_tf2 = buffer.lookup_transform("camera_rgb_optical_frame", "follow_point", Time())
+                # self.follow_tf2 = buffer.lookup_transform("base_link", "follow_point", Time())
+                self.follow_tf2 = buffer.lookup_transform("base_link", "follow_point", self.get_clock().now(), timeout = Duration(seconds=0, nanoseconds=100_000_000))
+
+                self.count += 1
+                if self.count > 100 :
+                    self.get_logger().info(f"follow_tf : {self.follow_tf2}")
+                    self.count = 0
+                    is_log = True
+
                 self.twist.angular.z = math.atan2(
                     self.follow_tf2.transform.translation.y,
                     self.follow_tf2.transform.translation.x)
@@ -383,10 +436,14 @@ class CrbsServer(Node):
                 self.twist.linear.x = math.sqrt(
                     self.follow_tf2.transform.translation.x**2 +
                     self.follow_tf2.transform.translation.y**2)
-                
+            finally:
+                if is_log :
+                    self.get_logger().info(f"self.twist x : {self.twist.linear.x} z : {self.twist.angular.z}") 
+
         elif self.cmd == "move":
             self.twist.linear.x = 0.0
             self.twist.angular.z = 2.0
+            
             if (self.get_clock().now() - self.prev_time) > Duration(seconds=1, nanoseconds=250_000_000):
                 self.prev_time = self.get_clock().now()
 
