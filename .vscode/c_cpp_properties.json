@@ -1,0 +1,52 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/test/turtlebot3_ws/install/turtlebot3_gazebo/include/**",
+        "/home/test/turtlebot3_ws/install/turtlebot3_fake_node/include/**",
+        "/home/test/turtlebot3_ws/install/open_manipulator_x_libs/include/**",
+        "/home/test/turtlebot3_ws/install/robotis_manipulator/include/**",
+        "/home/test/turtlebot3_ws/install/open_manipulator_msgs/include/**",
+        "/home/test/turtlebot3_ws/install/dynamixel_workbench_toolbox/include/**",
+        "/home/test/turtlebot3_ws/install/dynamixel_sdk_custom_interfaces/include/**",
+        "/home/test/turtlebot3_ws/install/dynamixel_sdk/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/user_interface/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/tb_interface/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/pilz_industrial_motion_planner_testutils/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/pilz_industrial_motion_planner/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/moveit_ros_control_interface/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/moveit_simple_controller_manager/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/moveit_ros_visualization/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/moveit_ros_planning_interface/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/moveit_ros_benchmarks/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/moveit_ros_warehouse/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/moveit_ros_robot_interaction/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/moveit_ros_perception/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/moveit_ros_move_group/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/moveit_planners_ompl/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/moveit_ros_planning/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/moveit_ros_occupancy_map_monitor/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/moveit_kinematics/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/chomp_motion_planner/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/moveit_core/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/srdfdom/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/rviz_marker_tools/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/rosparam_shortcuts/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/ros2_aruco_interfaces/include/**",
+        "/home/test/Desktop/Ros2/ros2/ros/install/moveit_task_constructor_msgs/include/**",
+        "/opt/ros/humble/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

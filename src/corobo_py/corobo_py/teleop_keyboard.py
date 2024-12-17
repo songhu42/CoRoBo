@@ -328,7 +328,7 @@ def main():
                 else:
                     for index in range(0, 7):
                         prev_goal_kinematics_pose[index] = goal_kinematics_pose[index]
-                    for index in range(0, 4):
+                    for index in range(0, 5):
                         prev_goal_joint_angle[index] = goal_joint_angle[index]
 
     except Exception as e:

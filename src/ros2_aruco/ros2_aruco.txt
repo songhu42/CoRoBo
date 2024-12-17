@@ -1,0 +1,501 @@
+*** X,Y,Z 축 정보가 안나오니 이점 양해 해주시면 감사하겠습니다. ***
+
+** aruco_recognition.launch.py
+
+```Python
+
+import os
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch_ros.actions import Node
+
+
+```
+
+- os: 파일 경로나 시스템 경로를 다루기 위한 표준 라이브러리입니다.
+- get_package_share_directory: ROS 2 패키지의 공유 디렉토리 경로를 가져오는 함수입니다. 이를 사용하면 설정 파일이나 리소스 파일의 경로를 쉽게 참조할 수 있습니다.
+- LaunchDescription: 실행할 노드와 그 설정을 기술하는 ROS 2의 launch 파일 객체입니다.
+- Node: 특정 ROS 2 노드를 실행하기 위한 설정을 정의하는 데 사용됩니다.
+
+```Python
+
+# 설정 파일 경로 정의
+aruco_params = os.path.join(
+    get_package_share_directory('ros2_aruco'),
+    'config',
+    'aruco_parameters.yaml'
+)
+
+
+```
+
+- get_package_share_directory('ros2_aruco'): ros2_aruco 패키지의 공유 디렉토리 경로를 가져옵니다.
+- os.path.join: 파일 경로를 플랫폼 독립적으로 결합합니다.
+결과 -> ros2_aruco 패키지의 config 폴더에 있는 aruco_parameters.yaml 설정 파일의 전체 경로를 가져옵니다.
+
+
+```Python
+
+# 노드 정의
+aruco_node = Node(
+    package='ros2_aruco',
+    executable='aruco_node',
+    parameters=[aruco_params]
+)
+
+
+```
+
+- package='ros2_aruco'-> ros2_aruco라는 패키지에서 실행 파일을 가져옵니다.
+- executable='aruco_node'-> 실행할 ROS 2 노드 이름입니다.
+- parameters=[aruco_params]-> aruco_parameters.yaml 파일에서 파라미터를 읽어 이 노드에 전달합니다.
+
+
+```Python
+
+# LaunchDescription 반환
+return LaunchDescription([
+    aruco_node
+])
+
+
+```
+
+- LaunchDescription: 노드 실행 설정을 포함하는 객체입니다.
+- aruco_node: 위에서 정의한 aruco_node 노드를 실행 목록에 추가합니다.
+
+
+** 전체 동작 요약 **
+- 목적: ros2_aruco 패키지의 aruco_node를 실행합니다.
+- 설정: aruco_parameters.yaml 파일을 파라미터로 전달하여, 노드가 ArUco 마커와 관련된 작업(예: 마커 감지)을 수행하도록 구성합니다.
+
+사용 흐름:
+사용자가 이 launch 파일을 실행하면 ROS 2 런타임이 aruco_node를 시작합니다.
+노드는 설정 파일(aruco_parameters.yaml)에서 읽은 파라미터에 따라 동작합니다.
+
+---------------------------------------------------------------------------------------
+
+** aruco.launch.py
+
+```Python
+
+# 라이브러리 임포트
+import os
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
+
+```
+
+이 코드는 ROS 2 런치 시스템과 관련된 모듈들을 임포트합니다.
+- DeclareLaunchArgument: 런치 파일에서 인자를 선언하여 사용자로부터 값을 받을 수 있습니다.
+- LaunchConfiguration: 런치 인자의 값을 참조하거나 기본값을 설정합니다.
+- Node: ROS 2 노드를 정의하고 실행하는 데 사용됩니다.
+
+** 런치 인자(Launch Arguments) **
+- 실행 시 사용자가 원하는 값을 전달할 수 있도록 설정을 제공합니다.
+
+```Python
+
+info_topic = LaunchConfiguration('info_topic', default='/camera_info')
+size = LaunchConfiguration('size', default=0.1)
+dictionary = LaunchConfiguration('dictionary', default='DICT_5X5_100')
+in_compressed = LaunchConfiguration('in_compressed', default='/image_raw/compressed')
+
+
+```
+
+- info_topic: 카메라 정보가 게시되는 ROS 주제(토픽) 이름 (/camera_info 기본값).
+- size: ArUco 마커의 실제 크기(미터 단위, 기본값 0.1).
+- dictionary: ArUco 마커의 사전(dictionary) 타입(기본값 'DICT_5X5_100').
+- in_compressed: 입력 이미지의 압축 포맷 토픽 이름 (/image_raw/compressed 기본값).
+
+
+```Python
+
+# LaunchDescription 생성
+return LaunchDescription([
+    DeclareLaunchArgument(...),
+    Node(...),
+    Node(...)
+])
+
+
+```
+
+- LaunchDescription: 런치 파일에서 실행할 노드와 인자를 정의합니다.
+- 여러 DeclareLaunchArgument 및 Node가 포함됩니다.
+
+
+```Python
+
+# ArUco 노드 설정
+Node(
+    package="ros2_aruco",
+    executable="aruco_node",
+    parameters=[
+        {'camera_info_topic': info_topic,
+         'marker_size': size,
+         'aruco_dictionary_id': dictionary}
+    ]
+)
+
+
+```
+
+- 패키지: ros2_aruco.
+- 실행 파일: aruco_node.
+파라미터:
+- camera_info_topic: 카메라 정보 토픽 이름.
+- marker_size: 마커 크기(미터).
+- aruco_dictionary_id: ArUco 사전 타입.
+- 이 노드는 지정된 파라미터를 사용하여 ArUco 마커를 감지하고 처리합니다.
+
+
+```Python
+
+# 이미지 포맷 변환 노드
+Node(
+    package="image_transport",
+    executable="republish",
+    arguments=['compressed', 'raw'],
+    remappings=[
+        ('in/compressed', in_compressed),
+        ('out', '/camera/image_raw')
+    ]
+)
+
+
+```
+
+- 패키지: image_transport.
+- 실행 파일: republish.
+- 인자: 압축 이미지(compressed)를 비압축 형식(raw)으로 변환.
+리매핑:
+- in/compressed: 입력 압축 이미지 토픽 (in_compressed).
+- out: 출력 비압축 이미지 토픽 (/camera/image_raw).
+- 이 노드는 ArUco 노드에서 사용할 수 있도록 압축 이미지를 비압축 형식으로 변환합니다.
+
+
+이 launch 파일은 카메라에서 가져온 이미지를 처리하여 ArUco 마커를 감지하는 시스템을 구성합니다.
+
+
+---------------------------------------------------------------------------------------
+
+
+aruco_generate_marker.py
+
+
+```Python
+
+"""
+Script for generating Aruco marker images.
+
+Author: Nathan Sprague
+Version: 10/26/2020
+"""
+
+# 필요한 라이브러리 임포트
+import argparse  # 명령줄 인자를 처리하기 위한 라이브러리
+import cv2  # OpenCV 라이브러리
+import numpy as np  # Numpy 라이브러리(현재는 사용하지 않지만 향후 확장 가능)
+
+# 사용자 친화적인 argparse 도움말 형식 정의
+class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter,
+                      argparse.RawDescriptionHelpFormatter):
+    """ 
+    argparse의 기본값 출력과 포매팅을 동시에 처리하기 위한 클래스.
+    두 개의 Formatter 클래스를 상속받아 도움말 출력에 기본값과 서식을 적용합니다.
+    """
+    pass
+
+# 스크립트의 주요 동작 정의
+def main():
+    # 명령줄 인자를 처리하기 위한 argparse 설정
+    parser = argparse.ArgumentParser(formatter_class=CustomFormatter,
+                                     description="Generate a .png image of a specified maker.")
+    
+    # 마커 ID 설정 (기본값: 1)
+    parser.add_argument('--id', default=1, type=int,
+                        help='Marker id to generate')
+    
+    # 마커 이미지의 한 변의 길이(픽셀) 설정 (기본값: 200px)
+    parser.add_argument('--size', default=200, type=int,
+                        help='Side length in pixels')
+    
+    # OpenCV에서 사용할 수 있는 ArUco 사전(Dictionary) 옵션을 나열
+    dict_options = [s for s in dir(cv2.aruco) if s.startswith("DICT")]
+    option_str = ", ".join(dict_options)  # 사전 목록을 쉼표로 구분된 문자열로 변환
+    dict_help = "Dictionary to use. Valid options include: {}".format(option_str)
+    
+    # 사용자가 선택할 ArUco 사전 설정 (기본값: DICT_5X5_250)
+    parser.add_argument('--dictionary', default="DICT_5X5_250", type=str,
+                        choices=dict_options,  # 선택 가능한 옵션 제한
+                        help=dict_help, metavar='')
+    
+    # 명령줄 인자 파싱
+    args = parser.parse_args()
+
+    # 선택한 ArUco 사전 ID를 가져옴
+    dictionary_id = cv2.aruco.__getattribute__(args.dictionary)
+    
+    # 선택한 ArUco 사전 객체를 생성
+    dictionary = cv2.aruco.getPredefinedDictionary(dictionary_id)
+    
+    # ArUco 마커 이미지를 생성 (마커 ID와 크기를 기반으로)
+    image = cv2.aruco.generateImageMarker(dictionary, args.id, args.size)
+    
+    # 생성된 이미지를 PNG 파일로 저장
+    # 파일 이름은 "marker_<ID>.png" 형식으로 저장 (예: marker_0001.png)
+    cv2.imwrite("marker_{:04d}.png".format(args.id), image)
+
+
+# 스크립트 실행 진입점
+if __name__ == "__main__":
+    main()
+
+
+```
+
+
+```Python
+
+
+"""
+This node locates Aruco AR markers in images and publishes their ids and poses.
+
+Subscriptions:
+   /camera/image_raw (sensor_msgs.msg.Image)       # 카메라 이미지 (흑백 또는 컬러)를 수신
+   /camera/camera_info (sensor_msgs.msg.CameraInfo) # 카메라 보정 정보(K, D 매트릭스)를 수신
+
+Published Topics:
+    /aruco_poses (geometry_msgs.msg.PoseArray)     # 감지된 모든 마커의 Pose(위치 및 방향)를 퍼블리시
+       Pose of all detected markers (suitable for rviz visualization)
+
+    /aruco_markers (ros2_aruco_interfaces.msg.ArucoMarkers) 
+       각 마커의 ID 및 Pose를 제공하는 커스텀 메시지
+
+Parameters:
+    marker_size - 마커 크기(미터 단위, 기본값: 0.0625m)
+    aruco_dictionary_id - 사용할 ArUco 사전 종류 (기본값: DICT_5X5_250)
+    image_topic - 이미지 데이터를 구독할 토픽 (기본값: /camera/image_raw)
+    camera_info_topic - 카메라 보정 정보를 구독할 토픽 (기본값: /camera/camera_info)
+
+Author: Nathan Sprague
+Version: 10/26/2020
+"""
+
+# 필요한 라이브러리 임포트
+import rclpy  # ROS 2 Python 클라이언트 라이브러리
+import rclpy.node  # 노드 생성용 클래스
+from rclpy.qos import qos_profile_sensor_data  # 센서 데이터용 QoS 프로파일
+from cv_bridge import CvBridge  # OpenCV 이미지를 ROS 이미지로 변환
+import numpy as np  # 수학 연산 라이브러리
+import cv2  # OpenCV 라이브러리 (ArUco 감지에 사용)
+import tf_transformations  # 변환(회전 및 변위) 관련 함수 제공
+
+# ROS 메시지 유형 임포트
+from sensor_msgs.msg import CameraInfo, Image
+from geometry_msgs.msg import PoseArray, Pose
+from ros2_aruco_interfaces.msg import ArucoMarkers
+from rcl_interfaces.msg import ParameterDescriptor, ParameterType
+
+
+# ArUco 노드 클래스 정의
+class ArucoNode(rclpy.node.Node):
+    def __init__(self):
+        super().__init__("aruco_node")  # 노드 이름 설정
+
+        # ---- ROS 파라미터 선언 및 기본값 설정 ----
+        # 마커 크기 설정
+        self.declare_parameter(
+            name="marker_size",
+            value=0.0625,
+            descriptor=ParameterDescriptor(
+                type=ParameterType.PARAMETER_DOUBLE,
+                description="Size of the markers in meters.",
+            ),
+        )
+
+        # ArUco 사전 종류 설정
+        self.declare_parameter(
+            name="aruco_dictionary_id",
+            value="DICT_5X5_250",
+            descriptor=ParameterDescriptor(
+                type=ParameterType.PARAMETER_STRING,
+                description="Dictionary that was used to generate markers.",
+            ),
+        )
+
+        # 이미지 입력 토픽 설정
+        self.declare_parameter(
+            name="image_topic",
+            value="/camera/image_raw",
+            descriptor=ParameterDescriptor(
+                type=ParameterType.PARAMETER_STRING,
+                description="Image topic to subscribe to.",
+            ),
+        )
+
+        # 카메라 정보 입력 토픽 설정
+        self.declare_parameter(
+            name="camera_info_topic",
+            value="/camera/camera_info",
+            descriptor=ParameterDescriptor(
+                type=ParameterType.PARAMETER_STRING,
+                description="Camera info topic to subscribe to.",
+            ),
+        )
+
+        # 카메라 프레임 이름 설정
+        self.declare_parameter(
+            name="camera_frame",
+            value="",
+            descriptor=ParameterDescriptor(
+                type=ParameterType.PARAMETER_STRING,
+                description="Camera optical frame to use.",
+            ),
+        )
+
+        # ---- 파라미터 값 읽기 ----
+        self.marker_size = (
+            self.get_parameter("marker_size").get_parameter_value().double_value
+        )
+        self.get_logger().info(f"Marker size: {self.marker_size}")
+
+        dictionary_id_name = (
+            self.get_parameter("aruco_dictionary_id").get_parameter_value().string_value
+        )
+        self.get_logger().info(f"Marker type: {dictionary_id_name}")
+
+        image_topic = (
+            self.get_parameter("image_topic").get_parameter_value().string_value
+        )
+        self.get_logger().info(f"Image topic: {image_topic}")
+
+        info_topic = (
+            self.get_parameter("camera_info_topic").get_parameter_value().string_value
+        )
+        self.get_logger().info(f"Image info topic: {info_topic}")
+
+        self.camera_frame = (
+            self.get_parameter("camera_frame").get_parameter_value().string_value
+        )
+
+        # ---- ArUco 사전 초기화 ----
+        try:
+            dictionary_id = cv2.aruco.__getattribute__(dictionary_id_name)
+            if type(dictionary_id) != type(cv2.aruco.DICT_5X5_100):
+                raise AttributeError
+        except AttributeError:
+            self.get_logger().error(
+                "bad aruco_dictionary_id: {}".format(dictionary_id_name)
+            )
+            options = "\n".join([s for s in dir(cv2.aruco) if s.startswith("DICT")])
+            self.get_logger().error("valid options: {}".format(options))
+
+        # ---- 구독 설정 ----
+        # 카메라 정보 수신
+        self.info_sub = self.create_subscription(
+            CameraInfo, info_topic, self.info_callback, qos_profile_sensor_data
+        )
+
+        # 이미지 데이터 수신
+        self.create_subscription(
+            Image, image_topic, self.image_callback, qos_profile_sensor_data
+        )
+
+        # ---- 퍼블리셔 설정 ----
+        self.poses_pub = self.create_publisher(PoseArray, "aruco_poses", 10)
+        self.markers_pub = self.create_publisher(ArucoMarkers, "aruco_markers", 10)
+
+        # ---- 카메라 파라미터 초기화 ----
+        self.info_msg = None
+        self.intrinsic_mat = None
+        self.distortion = None
+
+        # ArUco 감지기 초기화
+        self.aruco_dictionary = cv2.aruco.Dictionary_get(dictionary_id)
+        self.aruco_parameters = cv2.aruco.DetectorParameters_create()
+        self.bridge = CvBridge()
+
+    # 카메라 정보 콜백 (카메라 보정 행렬 설정)
+    def info_callback(self, info_msg):
+        self.info_msg = info_msg
+        self.intrinsic_mat = np.reshape(np.array(self.info_msg.k), (3, 3))
+        self.distortion = np.array(self.info_msg.d)
+        # 카메라 파라미터는 한 번만 설정되므로 구독 종료
+        self.destroy_subscription(self.info_sub)
+
+    # 이미지 콜백 (ArUco 마커 감지)
+    def image_callback(self, img_msg):
+        if self.info_msg is None:
+            self.get_logger().warn("No camera info has been received!")
+            return
+
+        # ROS 이미지 메시지를 OpenCV 이미지로 변환
+        cv_image = self.bridge.imgmsg_to_cv2(img_msg, desired_encoding="mono8")
+
+        # 감지된 마커 정보를 저장할 메시지 초기화
+        markers = ArucoMarkers()
+        pose_array = PoseArray()
+        if self.camera_frame == "":
+            markers.header.frame_id = self.info_msg.header.frame_id
+            pose_array.header.frame_id = self.info_msg.header.frame_id
+        else:
+            markers.header.frame_id = self.camera_frame
+            pose_array.header.frame_id = self.camera_frame
+
+        markers.header.stamp = img_msg.header.stamp
+        pose_array.header.stamp = img_msg.header.stamp
+
+        # ArUco 마커 감지
+        corners, marker_ids, rejected = cv2.aruco.detectMarkers(
+            cv_image, self.aruco_dictionary, parameters=self.aruco_parameters
+        )
+        if marker_ids is not None:
+            # 마커 자세 추정
+            rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(
+                corners, self.marker_size, self.intrinsic_mat, self.distortion
+            )
+            for i, marker_id in enumerate(marker_ids):
+                pose = Pose()
+                pose.position.x = tvecs[i][0][0]
+                pose.position.y = tvecs[i][0][1]
+                pose.position.z = tvecs[i][0][2]
+
+                rot_matrix = np.eye(4)
+                rot_matrix[0:3, 0:3] = cv2.Rodrigues(np.array(rvecs[i][0]))[0]
+                quat = tf_transformations.quaternion_from_matrix(rot_matrix)
+
+                pose.orientation.x = quat[0]
+                pose.orientation.y = quat[1]
+                pose.orientation.z = quat[2]
+                pose.orientation.w = quat[3]
+
+                pose_array.poses.append(pose)
+                markers.poses.append(pose)
+                markers.marker_ids.append(marker_id[0])
+
+            # 퍼블리시
+            self.poses_pub.publish(pose_array)
+            self.markers_pub.publish(markers)
+
+
+# 메인 함수
+def main():
+    rclpy.init()  # ROS 2 초기화
+    node = ArucoNode()  # 노드 인스턴스 생성
+    rclpy.spin(node)  # 노드 실행 및 스핀
+    node.destroy_node()  # 노드 종료
+    rclpy.shutdown()  # ROS 2 종료
+
+
+if __name__ == "__main__":
+    main()
+
+
+```
+

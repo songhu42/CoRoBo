@@ -1,0 +1,667 @@
+지금까지 제가 만든 OpenCV 하겠습니다. 
+
+
+** pip install ultralytics ** 
+
+- YOLOv8(You Only Look Once)의 최신 버전을 제공하는 Ultralytics 라이브러리를 설치합니다.
+
+- YOLO는 객체 탐지, 이미지 분할, 그리고 추적 등의 작업을 수행하는 딥러닝 모델입니다.
+-  YOLOv8과 관련된 기능들을 쉽게 사용할 수 있도록 라이브러리를 설치합니다.
+사용 이유: YOLOv8 모델을 이용해 객체를 감지하고, 이를 기반으로 분석 또는 처리를 하기 위해 필요합니다.
+
+설치된 주요 기능: YOLO 모델의 학습 및 추론. 사전 학습된 모델 다운로드 및 사용. 사용자 정의 데이터셋으로 모델 학습.
+
+
+** pip install mediapipe **
+- Google에서 제공하는 MediaPipe 라이브러리를 설치합니다.
+- MediaPipe는 실시간 머신러닝 파이프라인을 구축하기 위한 도구로, 포즈 추정, 손 추적, 얼굴 감지 등 다양한 기능을 제공합니다.
+사용 이유:
+- 포즈 추정을 위해 MediaPipe의 Pose Estimation 모듈을 사용하기 위해 설치합니다.
+- MediaPipe는 GPU를 지원하며, 빠르고 효율적인 성능을 제공합니다.
+
+설치된 주요 기능: Pose: 사람의 자세 및 관절 위치 추정. Hands: 손 추적 및 손가락 관절 감지, Face Mesh: 얼굴의 3D 메시 생성, Objectron: 3D 객체 감지, 다양한 머신러닝 기반 실시간 애플리케이션 기능
+
+
+** sudo apt-get install qtwayland5 **
+- Qt Wayland 라이브러리를 설치합니다.
+- Qt는 GUI 기반 애플리케이션을 개발하기 위한 프레임워크입니다.
+- Wayland는 X 서버를 대체하는 디스플레이 서버 프로토콜이며, Qt Wayland는 Qt 애플리케이션이 Wayland 환경에서 실행될 수 있도록 지원합니다.
+
+MediaPipe 및 OpenCV가 GUI(이미지 또는 비디오 화면)를 렌더링할 때, Qt 기반 창 표시를 위해 이 라이브러리가 필요합니다.
+특히, **Wayland 기반 환경(Ubuntu 22.04 등)**에서 OpenCV 창 표시 문제를 해결하기 위해 필수적입니다.
+
+------------------------------------------------------------------------------------
+
+1. test(yolo).py
+
+위 코드는 MediaPipe와 YOLOv8을 활용하여 비디오에서 사람을 탐지하고, 탐지된 사람 영역에 대해 포즈 추정을 수행하는 Python 스크립트입니다. 주요 부분을 설명드리겠습니다.
+
+라이브러리 및 모델 초기화
+```Python
+
+import cv2
+import mediapipe as mp
+import numpy as np
+from ultralytics import YOLO
+import time
+
+```
+
+- cv2 (OpenCV): 이미지 및 비디오 처리.
+- mediapipe: 포즈 추정을 위한 라이브러리.
+- ultralytics: YOLOv8 모델을 사용하여 객체 탐지.
+- time: FPS 계산을 위한 시간 측정.
+
+```Python
+
+mp_pose = mp.solutions.pose
+pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5, model_complexity=2)
+mp_drawing = mp.solutions.drawing_utils
+
+```
+
+- MediaPipe 포즈 추정 초기화:
+- min_detection_confidence: 탐지 정확도 기준값.
+- min_tracking_confidence: 추적 정확도 기준값.
+- model_complexity: 모델 복잡도 수준 (0: 가볍고 빠름, 2: 더 정확함).
+
+```Python
+
+yolo_model = YOLO("yolov8n.pt")
+
+```
+- yolov8n.pt: YOLOv8 nano 모델(가장 가벼운 버전)을 사용
+
+```Python
+
+capture = cv2.VideoCapture("/home/test/Desktop/CoRoBo/src/imgs/nn.mp4")
+s_factor = 0.5  # 화면 축소 비율
+frameCount = 0
+start_time = time.time()
+
+```
+
+- 비디오 파일 읽기: 지정된 경로에서 비디오를 로드.
+- s_factor: 프레임을 처리하기 전, 성능 향상을 위해 축소 비율을 설정 (50%로 축소)
+
+```Python
+
+while True:
+    ret, frame = capture.read()
+    if not ret:
+        break
+
+```
+
+- ret: 프레임 읽기 성공 여부.
+- frame: 현재 읽은 프레임.
+- 비디오가 끝나면 루프를 종료.
+
+```Python
+frame_resized = cv2.resize(frame, None, fx=s_factor, fy=s_factor, interpolation=cv2.INTER_AREA)
+```
+- 비디오 프레임을 설정한 축소 비율로 리샘플링하여 처리 속도를 높임
+
+```Python
+
+results = yolo_model(frame_resized)
+detections = results[0].boxes
+
+```
+- YOLOv8 모델을 사용하여 객체 탐지 수행.
+- results[0].boxes: 탐지된 객체의 경계 상자, 클래스 ID, 신뢰도 정보를 포함.
+
+```Python
+
+for detection in detections:
+    xmin, ymin, xmax, ymax = detection.xyxy[0]
+    conf = detection.conf[0]
+    class_id = int(detection.cls[0])
+    if class_id == 0 and conf > 0.5:
+
+```
+
+- class_id == 0: 사람 클래스만 필터링.
+- conf > 0.5: 신뢰도가 50% 이상인 경우만 선택.
+- 경계 상자 좌표를 얻고, 축소된 프레임 비율을 보정하여 원래 크기 좌표로 변환.
+
+MediaPipe 포즈 추정
+```Python
+
+person_frame = frame[ymin:ymax, xmin:xmax]
+rgb_person_frame = cv2.cvtColor(person_frame, cv2.COLOR_BGR2RGB)
+result_pose = pose.process(rgb_person_frame)
+if result_pose.pose_landmarks:
+    mp_drawing.draw_landmarks(person_frame, result_pose.pose_landmarks, mp_pose.POSE_CONNECTIONS)
+
+
+```
+
+- 탐지된 사람 영역(person_frame)을 잘라냄.
+- MediaPipe는 RGB 이미지를 요구하므로 색상 공간 변환.
+- 포즈 추정을 수행하고, 포즈 랜드마크가 있으면 해당 영역에 랜드마크를 그립니다.
+
+```Python
+
+cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
+cv2.putText(frame, 'Person', (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+
+```
+- YOLO 탐지 결과에 경계 상자를 그리며, "Person" 텍스트를 표시.
+
+FPS 계산
+
+```Python
+
+fps = frameCount / (end_time - start_time)
+cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+
+```
+- 프레임 수와 경과 시간을 이용하여 FPS를 계산.
+- 현재 프레임의 좌측 상단에 FPS 표시.
+
+
+종료 조건
+
+```Python
+
+key = cv2.waitKey(20)
+if key == 27:  # ESC 키
+    break
+
+```
+ - ESC 키 입력 시 루프 종료.
+```Python
+
+capture.release()
+cv2.destroyAllWindows()
+
+```
+- 비디오 캡처 및 GUI 창 해제.
+
+------------------------------------------------------------------------------------
+
+test(yolo2).py
+
+동영상 및 모델 초기화
+
+```Python
+
+video_path = "/home/test/Desktop/CoRoBo/src/imgs/ss.mp4"
+VideoSignal = cv2.VideoCapture(video_path)
+model = YOLO("yolov8n.pt")
+
+```
+
+- video_path: 분석할 동영상 파일 경로를 지정합니다.
+- VideoSignal: OpenCV로 동영상 파일을 불러옵니다.
+- YOLO("yolov8n.pt"): YOLOv8 경량 모델(yolov8n.pt)을 로드합니다. 다른 YOLOv8 모델(yolov8s.pt, yolov8m.pt)도 사용 가능.
+
+크기 계산을 위한 변수 초기화
+
+```Python
+
+reference_object_height_cm = 170  # 기준 객체의 실제 크기(cm)
+focal_length_px = 800  # 카메라의 초점 거리 (임의 설정)
+reference_object_height_px = 250  # 기준 객체(사람)의 픽셀 높이
+
+```
+
+- 기준 객체(사람)
+- reference_object_height_cm: 실제 높이를 170cm로 가정(사람 키).
+- reference_object_height_px: 동영상에서 해당 객체의 픽셀 단위 높이.
+- focal_length_px: 카메라 초점 거리(픽셀 단위)는 보정에 필요하지만, 현재는 대략적인 값을 사용.
+
+프레임 읽기 및 탐지
+
+```
+
+ret, frame = VideoSignal.read()
+if not ret:
+    print("동영상 재생이 끝났습니다.")
+    break
+
+```
+
+프레임 읽기
+- ret: 프레임을 성공적으로 읽었는지 확인.
+- frame: 현재 읽은 프레임.
+- 동영상이 끝나면 루프를 종료합니다.
+
+
+YOLOv8 탐지
+
+```Python
+
+results = model(frame)
+detections = results[0].boxes
+
+```
+
+- YOLOv8 모델을 사용하여 프레임에서 객체 탐지 수행.
+- results[0].boxes: 탐지된 객체의 경계 상자, 클래스 ID, 신뢰도 정보를 포함
+
+탐지 결과 처리
+
+```Python
+
+boxes = detections.xyxy.cpu().numpy()
+confidences = detections.conf.cpu().numpy()
+class_ids_detected = detections.cls.cpu().numpy().astype(int)
+class_names = results[0].names
+
+```
+
+- boxes: 탐지된 객체의 경계 상자 좌표 [x1, y1, x2, y2] (좌상단 및 우하단).
+- confidences: 각 객체 탐지의 신뢰도 (0~1).
+- class_ids_detected: 탐지된 클래스의 ID들.
+- class_names: 모델이 사용하는 클래스 이름 목록 (예: "person", "car" 등).
+
+탐지된 객체 높이 계산
+
+```Python
+
+for i, box in enumerate(boxes):
+    if confidences[i] > 0.5:  # 신뢰도 0.5 이상인 경우 처리
+        x1, y1, x2, y2 = map(int, box[:4])
+        object_height_px = y2 - y1  # 객체의 픽셀 높이
+        object_height_cm = (object_height_px * reference_object_height_cm) / reference_object_height_px
+
+
+```
+- 신뢰도 50% 이상인 객체만 처리.
+- object_height_px: 경계 상자로부터 객체의 높이(픽셀 단위)를 계산.
+- object_height_cm: 기준 객체와의 비율을 이용해 실제 높이(cm)로 변환
+[ex: 📐 객체 높이(cm) = (🖼️ 객체 높이(px) × 🎯 기준 높이(cm)) ÷ 🖼️ 기준 높이(px)]
+
+
+결과 표시
+
+```Python
+
+cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 5)
+cv2.putText(frame, f"{label} {confidence:.2f} ({object_height_cm:.2f} cm)", 
+            (x1, y1 - 10), cv2.FONT_ITALIC, 0.5, (255, 255, 255), 1)
+
+```
+
+- 경계 상자: 탐지된 객체 주변에 빨간색 박스를 그림.
+- 레이블과 크기 정보:
+- 클래스 이름, 신뢰도, 높이(cm)를 표시.
+예: Person 0.89 (168.23 cm).
+
+------------------------------------------------------------------------------------
+
+test(yolo_Hough transform).py
+
+YOLO 모델 준비
+
+```Python
+
+from ultralytics import YOLO
+model = YOLO('yolov8n.pt')
+
+```
+
+- YOLOv8의 경량 모델(yolov8n.pt)을 사용하여 객체 탐지를 수행합니다.
+- YOLO는 프레임에서 차량 등 특정 객체를 감지하고, 경계 상자와 클래스 정보를 반환합니다.
+
+동영상 로드
+
+```Python
+
+capture = cv2.VideoCapture("/home/test/Desktop/CoRoBo/src/imgs/rrr.mp4")
+
+```
+- 지정한 동영상 파일에서 프레임을 읽습니다.
+- capture.isOpened()로 비디오 파일이 올바르게 열렸는지 확인합니다.
+
+엣지 검출 (Canny Edge Detection)
+
+```Python
+
+def detect_edges(frame):
+    gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+    blur = cv2.GaussianBlur(gray, (5, 5), 0)
+    edges = cv2.Canny(blur, 50, 150)
+    return edges
+
+```
+
+- 입력 프레임을 흑백 변환 → 가우시안 블러 → 캐니 엣지 검출을 통해 차선의 엣지를 찾습니다.
+**엣지 검출(Canny)**은 픽셀 간 강한 변화(경계)를 찾는 기법입니다.
+
+관심 영역 마스킹 (Region of Interest, ROI)
+
+```Python
+
+def region_of_interest(edges):
+    height, width = edges.shape
+    mask = np.zeros_like(edges)
+    polygon = np.array([
+        [(0, height), (width, height), (int(width / 2), int(height / 2))]
+    ], np.int32)
+    cv2.fillPoly(mask, polygon, 255)
+    cropped_edges = cv2.bitwise_and(edges, mask)
+    return cropped_edges
+
+
+```
+
+- 삼각형 형태의 관심 영역을 지정하여 차선이 있을 가능성이 높은 부분만 남깁니다.
+- 결과적으로 차선 주변의 엣지들만 남깁니다.
+
+
+허프 변환을 통한 라인 검출
+
+```Python
+
+def detect_line_segments(cropped_edges):
+    rho = 1
+    angle = np.pi / 180
+    min_threshold = 20
+    line_segments = cv2.HoughLinesP(cropped_edges, rho, angle, min_threshold,
+                                    np.array([]), minLineLength=30, maxLineGap=50)
+    return line_segments
+
+
+```
+
+- 허프 변환을 사용하여 차선의 직선 세그먼트를 검출합니다.
+- rho: 직선을 나타내는 거리 간격 (1픽셀 단위).
+- angle: 직선 각도의 간격 (1도 단위로 변환).
+- minLineLength: 직선으로 간주할 최소 길이.
+- maxLineGap: 선 사이 최대 간격.
+
+
+차선 평균화 및 중심선 계산
+
+```Python
+
+def average_slope_intercept(frame, line_segments):
+    # 직선의 기울기와 y절편 계산
+    for x1, y1, x2, y2 in line_segment:
+        fit = np.polyfit((x1, x2), (y1, y2), 1)
+
+
+```
+
+- 허프 변환에서 검출된 직선을 왼쪽 차선과 오른쪽 차선으로 나누고, 각 차선의 평균 기울기와 절편을 계산합니다.
+- 검출된 차선이 기울기 기준:
+- slope < -0.5: 왼쪽 차선
+- slope > 0.5: 오른쪽 차선
+
+```Python
+
+def calculate_center_line(frame, lane_lines):
+    if len(lane_lines) == 2:
+        left_line = lane_lines[0][0]
+        right_line = lane_lines[1][0]
+        center_line = [...]
+        return [center_line]
+
+```
+
+- 검출된 왼쪽/오른쪽 차선으로부터 차량이 위치한 도로의 중앙선을 계산합니다.
+
+
+중앙선 시각화
+
+```Python
+
+def display_center_line(frame, center_line):
+    cv2.line(frame, (x1, y1), (x2, y2), (255, 0, 0), 5)
+    distance_cm = abs(x2 - x1) * 0.05
+    label = f'{distance_cm:.2f} cm'
+    cv2.putText(frame, label, ...)
+
+
+```
+
+- 검출된 중심선을 파란색 선으로 그립니다.
+- 중심선 길이를 픽셀 단위에서 cm로 변환(픽셀 당 0.05m 가정)하여 표시합니다.
+
+
+YOLO를 통한 차량 탐지
+
+```Python
+
+def car_detect(frame, model, confThreshold=0.5):
+    results = model(frame)
+    for result in results:
+        for box in boxes:
+            label = f'{model.names[class_id]} {confidence:.2f}'
+            cv2.rectangle(frame, ...)
+            cv2.putText(frame, ...)
+
+
+```
+
+- YOLOv8 모델을 사용하여 차량 객체를 탐지합니다.
+- 신뢰도(confidence)가 confThreshold=0.5 이상인 차량만 화면에 경계 상자와 클래스 이름으로 표시합니다.
+
+
+메인 루프
+
+```Python
+
+while capture.isOpened():
+    ret, frame = capture.read()
+    edges = detect_edges(frame)
+    cropped_edges = region_of_interest(edges)
+    line_segments = detect_line_segments(cropped_edges)
+    lane_lines = average_slope_intercept(frame, line_segments)
+    center_line = calculate_center_line(frame, lane_lines)
+    frame_with_center = display_center_line(frame, center_line)
+    final_frame = car_detect(frame_with_center, model)
+    cv2.imshow("Lane and Car Detection", final_frame)
+
+```
+
+매 프레임마다 
+- 차선의 엣지를 검출하고 ROI를 적용.
+- 허프 변환으로 직선을 검출하여 차선 및 중심선을 계산.
+- YOLOv8을 사용하여 차량을 탐지.
+- 결과를 화면에 출력
+
+------------------------------------------------------------------------------------
+test(ros_opencv).py
+
+라이브러리 및 초기화
+
+```Python
+
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
+import cv2
+import mediapipe as mp
+import numpy as np
+import time
+
+```
+
+- rclpy: ROS 2 파이썬 클라이언트 라이브러리로, ROS 2 노드를 생성 및 관리합니다.
+- sensor_msgs.msg.Image: ROS 2에서 이미지 데이터를 주고받을 때 사용하는 메시지 타입.
+- cv_bridge.CvBridge: ROS 이미지 메시지(sensor_msgs/Image)를 OpenCV 이미지(numpy array)로 변환하는 도구.
+- mediapipe: 포즈 추정을 위한 AI 모델 제공.
+- cv2: OpenCV를 사용하여 영상 처리 및 HOG(Histogram of Oriented Gradients) 기반 사람 검출을 수행.
+
+PoseEstimationNode 클래스
+
+```Python
+
+# 초기화 (__init__)
+class PoseEstimationNode(Node):
+    def __init__(self):
+        super().__init__('pose_estimation_node')
+
+```
+
+- ROS 2 노드를 생성하며, 이름은 pose_estimation_node입니다.
+
+
+```Python
+
+# 이미지 구독
+self.subscription = self.create_subscription(
+    Image,
+    '/camera/image_raw',  # 카메라에서 발행되는 이미지 토픽
+    self.image_callback,
+    1
+)
+
+```
+
+- ROS 2 이미지 토픽(/camera/image_raw)을 구독하며, 새로운 이미지가 수신될 때마다 image_callback 함수가 호출됩니다.
+
+```Python
+
+# CvBridge 초기화
+self.bridge = CvBridge()
+
+```
+
+- ROS 2 이미지 메시지를 OpenCV 형식으로 변환하거나, 반대로 변환할 때 사용됩니다.
+
+```Python
+
+# MediaPipe 포즈 추정
+self.mp_pose = mp.solutions.pose
+self.pose = self.mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5, model_complexity=2)
+
+
+```
+
+- MediaPipe의 포즈 추정 모델을 초기화합니다.
+- min_detection_confidence: 포즈 검출 최소 신뢰도.
+- min_tracking_confidence: 포즈 추적 최소 신뢰도.
+- model_complexity: 모델 복잡도를 설정합니다 (0, 1, 2 중 선택)
+
+```Python
+
+# HOG 사람 검출기
+self.hog = cv2.HOGDescriptor()
+self.hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
+
+```
+
+- OpenCV의 HOG(Histogram of Oriented Gradients) 기반 사람 검출기를 초기화합니다.
+
+
+```Python
+
+# 타이머
+self.timer = self.create_timer(1.0, self.timer_callback)
+
+```
+
+- 1초마다 timer_callback 함수가 실행됩니다.
+
+
+```Python
+
+# FPS 계산을 위한 시간 초기화
+self.start_time = time.time()
+
+```
+
+```Python
+
+# 이미지 콜백 함수 (image_callback)
+def image_callback(self, msg):
+    self.get_logger().info('Received image message')
+
+```
+
+- 역할: ROS 2 이미지 메시지를 수신하면 호출되어 포즈 추정 및 사람 검출을 수행합니다.
+
+```Python
+
+# 이미지 변환
+frame = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
+
+```
+
+- ROS 2 이미지 메시지를 OpenCV 형식(numpy array)으로 변환합니다.
+
+```Python
+
+# HOG 기반 사람 검출
+gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+boxes, weights = self.hog.detectMultiScale(gray, winStride=(8, 8), padding=(8, 8), scale=1.05)
+
+
+```
+
+- 입력 이미지를 흑백으로 변환 후 HOG 사람 검출기를 사용하여 사람의 바운딩 박스를 반환합니다.
+- winStride: 탐색 창의 이동 간격.
+- padding: 탐색 창 외곽 패딩.
+- scale: 이미지 크기 조정 비율.
+
+```Python
+
+# 사람 검출 후 포즈 추정
+for (x, y, w, h) in boxes:
+    person_frame = frame[y:y+h, x:x+w]
+    rgb_person_frame = cv2.cvtColor(person_frame, cv2.COLOR_BGR2RGB)
+    result_pose = self.pose.process(rgb_person_frame)
+    if result_pose.pose_landmarks:
+        self.mp_drawing.draw_landmarks(person_frame, result_pose.pose_landmarks, self.mp_pose.POSE_CONNECTIONS)
+
+
+```
+
+- 검출된 사람 영역을 잘라낸 후 RGB로 변환하여 MediaPipe 포즈 추정을 수행합니다.
+- 포즈 랜드마크가 감지되면 draw_landmarks로 포즈를 시각화합니다.
+
+
+```Python
+
+# FPS 계산
+fps = 1.0 / (time.time() - self.start_time)
+cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+
+```
+
+- 프레임 처리 속도를 계산하여 화면에 표시합니다.
+
+```Python
+
+# 결과 출력
+cv2.imshow('MJPEG Image', frame)
+cv2.waitKey(1)
+
+```
+
+```Python
+
+# 타이머 콜백 함수 (timer_callback)
+def timer_callback(self):
+    self.get_logger().info('Timer triggered!')
+
+
+```
+
+- 주기적으로 실행되며, 현재는 노드 상태를 로깅하는 간단한 역할만 수행합니다.
+
+
+```Python
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = PoseEstimationNode()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        print("Node interrupted by user")
+    finally:
+        node.destroy_node()
+
+
+```
+
+- rclpy.spin(node): 노드를 실행 상태로 유지하며, 메시지가 수신될 때까지 대기합니다.
+- KeyboardInterrupt: 사용자가 실행을 중단하면 종료 처리.
+
