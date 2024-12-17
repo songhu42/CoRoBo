@@ -10,20 +10,15 @@ ros2 action send_goal /gripper_controller/gripper_cmd control_msgs/action/Grippe
 ros2 action send_goal /gripper_controller/gripper_cmd control_msgs/action/GripperCommand "{command: {position: -0.014, max_effort: 50.0}}"
 
 팔 들기
-ros2 action send_goal /arm_controller/follow_joint_trajectory control_msgs/action/FollowJointTrajectory "{trajectory: {joint_names: ['joint1', 'joint2', 'joint3', 'joint4'], points: [{positions: [0.0, 0.0, 0.0, 0.0], time_from_start: {sec: 1, nanosec: 0}}]}}"
-
 ros2 action send_goal /arm_controller/follow_joint_trajectory control_msgs/action/FollowJointTrajectory "{trajectory: {joint_names: ['joint1', 'joint2', 'joint3', 'joint4'], points: [{positions: [1.5, 0.0, 0.0, 0.0], time_from_start: {sec: 1, nanosec: 0}}]}}"
 
 팔 내리기
 ros2 action send_goal /arm_controller/follow_joint_trajectory control_msgs/action/FollowJointTrajectory "{trajectory: {joint_names: ['joint1', 'joint2', 'joint3', 'joint4'], points: [{positions: [0.0, 1.6, -0.8, -0.8], time_from_start: {sec: 1, nanosec: 0}}]}}"
 
-ros2 action send_goal /arm_controller/follow_joint_trajectory control_msgs/action/FollowJointTrajectory "{trajectory: {joint_names: ['joint1', 'joint2', 'joint3', 'joint4'], points: [{positions: [1.5, 1.4, 0.1, -1.5], time_from_start: {sec: 1, nanosec: 0}}]}}"
+ros2 action send_goal /arm_controller/follow_joint_trajectory control_msgs/action/FollowJointTrajectory "{trajectory: {joint_names: ['joint1', 'joint2', 'joint3', 'joint4'], points: [{positions: [1.5, 1.0, 0.1, -1.1], time_from_start: {sec: 1, nanosec: 0}}]}}"
 
-팔 중간 포인트
-ros2 action send_goal /arm_controller/follow_joint_trajectory control_msgs/action/FollowJointTrajectory "{trajectory: {joint_names: ['joint1', 'joint2', 'joint3', 'joint4'], points: [{positions: [1.5, 0.9, -0.2, -0.8], time_from_start: {sec: 1, nanosec: 0}}]}}"
-
-팔 최고 포인트
-ros2 action send_goal /arm_controller/follow_joint_trajectory control_msgs/action/FollowJointTrajectory "{trajectory: {joint_names: ['joint1', 'joint2', 'joint3', 'joint4'], points: [{positions: [1.5, 0.3, -0.4, 0.0], time_from_start: {sec: 1, nanosec: 0}}]}}"
+팔 내밀기
+ros2 action send_goal /arm_controller/follow_joint_trajectory control_msgs/action/FollowJointTrajectory "{trajectory: {joint_names: ['joint1', 'joint2', 'joint3', 'joint4'], points: [{positions: [1.5, 1.5, -1.2, -0.2], time_from_start: {sec: 1, nanosec: 0}}]}}"
 
 팔 원위치
 ros2 action send_goal /arm_controller/follow_joint_trajectory control_msgs/action/FollowJointTrajectory "{trajectory: {joint_names: ['joint1', 'joint2', 'joint3', 'joint4'], points: [{positions: [0.0, -1.5785, 1.2241, 0.2654], time_from_start: {sec: 1, nanosec: 0}}]}}"
