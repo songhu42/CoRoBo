@@ -111,7 +111,9 @@ class CrbmCenter(Node):
                     self.cmd_req.act_delay_factor = 0.9
                     self.cmd_req.x = float(service_info.get_parm_val("vel"))
                     self.cmd_req.y = float(service_info.get_parm_val("rot"))
-                    self.cmd_req.z = float(service_info.get_parm_val("dur"))
+                    # 서비스 시간으로 이동시간 세팅한다. 파라메터는 일단 무시.. 나중에 쓸 수도 있다.. 
+                    # self.cmd_req.z = float(service_info.get_parm_val("dur"))
+                    self.cmd_req.z = self.cmd_req.act_dur
                     self.get_logger().info(f"robo_movedur request to crbs_server vel: {self.cmd_req.x} rot: {self.cmd_req.y} dur: {self.cmd_req.z}")
 
                 # pre delay duration.. 

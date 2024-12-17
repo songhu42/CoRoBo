@@ -446,6 +446,9 @@ class CrbsServer(Node):
             
             if (self.get_clock().now() - self.prev_time) > Duration(seconds=1, nanoseconds=250_000_000):
                 self.prev_time = self.get_clock().now()
+        else:
+            self.twist.linear.x = 0.0
+            self.twist.angular.z = 0.0
 
 def main(args=None):
     rclpy.init(args=args)
