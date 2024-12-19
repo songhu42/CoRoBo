@@ -1,11 +1,11 @@
 if [ $# -eq 0 ]
   then
-        export ROS_DOMAIN_ID=18
-	ros2 run corobo_py crbm_center --ros-args -p server_type:=main 
+        export ROS_DOMAIN_ID=06
+	ros2 run corobo_py crbm_caller server_type main
 
   else
         export ROS_DOMAIN_ID=18
-	ros2 run corobo_py crbm_center --ros-args -p server_type:=sub
+	ros2 run corobo_py crbm_caller server_type sub
 fi
 echo $ROS_DOMAIN_ID
 
